@@ -1,0 +1,2411 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.4/css/dataTables.bootstrap5.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* === PENGATURAN DASAR === */
+    body { background-color: #f8fafc; font-family: 'Roboto', sans-serif; margin: 0; height: 100vh; display: flex; flex-direction: column; overflow: hidden; } 
+    
+    /* === STRATEGI DUA KONTAINER (LOGIN & DASHBOARD) === */
+    #login-page { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+    #main-dashboard { width: 100%; height: 100%; display: none; flex-direction: column; flex: 1; }
+
+    .top-nav { background: #0b2545; padding: 0.45rem 1.5rem; flex-shrink: 0; z-index: 1050; }
+    .navbar-brand { font-weight: bold; color: white !important; }
+    .nav-pills .nav-link { color: #94a3b8; font-size: 0.9rem; margin-right: 10px; cursor: pointer; }
+    .nav-pills .nav-link.active { background: #3b82f6 !important; color: white !important; }
+    .main-content { flex: 1; padding: 15px; overflow: hidden; display: flex; flex-direction: column; }
+    .content-page { display: none; flex-direction: column; height: 100%; }
+    .content-page.active { display: flex; }
+    .scrollable-area { flex: 1; overflow-y: auto; overflow-x: hidden; padding-bottom: 20px; }
+
+    /* === TOMBOL STATUS SERAGAM === */
+    .btn-status-seragam { display: inline-flex !important; align-items: center; justify-content: center; height: 26px !important; width: 85px !important; font-size: 11px !important; font-weight: bold !important; border-radius: 4px !important; cursor: pointer; transition: 0.2s; border: none; padding: 0 !important; }
+    .btn-status-seragam:hover { opacity: 0.8; transform: scale(1.03); }
+
+    /* === PENGATURAN TABEL LAINNYA (REKAP) === */
+    .table-responsive-container { background: white; border-radius: 8px; border: 1px solid #e2e8f0; overflow: auto; display: flex; flex-direction: column; flex: 1; padding: 10px;}
+    .table-fixed { table-layout: fixed !important; width: 100% !important; }
+    .table-fixed td, .table-fixed th { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .table-rekap thead th { position: sticky; top: 0; z-index: 10; background-color: #f1f5f9 !important; color: #334155 !important; text-align: center; font-size: 0.90rem; vertical-align: middle; border: 1px solid #dee2e6 !important; }
+    .table-rekap tfoot td { position: sticky; bottom: 0; z-index: 10; background-color: #f8fafc !important; font-weight: bold; color: #0f172a; border: 1px solid #dee2e6 !important; font-size: 0.9rem; }
+    .table-rekap tbody td { font-size: 0.85rem;}
+    .progress-container { width: 100%; height: 22px; background-color: #f1f5f9; border-radius: 4px; position: relative; overflow: hidden; border: 1px solid #e2e8f0; }
+    .progress-fill { height: 100%; transition: width 0.3s ease; }
+    .progress-text { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold; color: #000; z-index: 2; }
+    .bg-bar-blue { background-color: #60a5fa !important; } .bg-bar-orange { background-color: #fb923c !important; } .bg-bar-green { background-color: #4ade80 !important; }
+    .chart-panel { background: white; border-radius: 8px; border: 1px solid #e2e8f0; padding: 15px; display: flex; flex-direction: column; }
+    #loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+    /* === TABEL MONITORING UTAMA === */
+    #page-monitoring .table-responsive-container, .dataTables_scrollBody { overflow-x: hidden !important; }
+    #tableSpm th:nth-child(1) { width: 6% !important; }
+    #tableSpm th:nth-child(2) { width: 10% !important; }
+    #tableSpm th:nth-child(3) { width: 10% !important; }
+    #tableSpm th:nth-child(4) { width: 10% !important; }
+    #tableSpm th:nth-child(5) { width: 33% !important; }
+    #tableSpm th:nth-child(6) { width: 10% !important; }
+
+    .dataTables_scrollHeadInner table { width: 100% !important; margin-bottom: 0 !important; border-bottom: none !important;}
+    table.dataTable thead th, .dataTables_scrollHeadInner th { font-family: 'Roboto', sans-serif !important; font-size: 12px !important; font-weight: bold !important; color: #0f172a !important; text-transform: uppercase !important; text-align: center !important; vertical-align: middle !important; padding-top: 12px !important; padding-bottom: 12px !important; padding-left: 8px !important; padding-right: 20px !important; white-space: normal !important; word-wrap: break-word; border-bottom: 2px solid #e2e8f0 !important; }
+    table.dataTable { margin-top: 0 !important; }
+    table.dataTable thead th { border-bottom: 1px solid #e2e8f0 !important; padding-bottom: 8px !important; }
+    #tableSpm tbody td { padding-top: 6px !important; border-top: none !important; }
+
+    table.dataTable thead th.sorting, table.dataTable thead th.sorting_asc, table.dataTable thead th.sorting_desc { background-image: none !important; }
+    table.dataTable thead th.sorting::before, table.dataTable thead th.sorting_asc::before, table.dataTable thead th.sorting_desc::before { content: "↑" !important; right: 1em !important; font-size: 14px !important; opacity: 0.3 !important; bottom: 50% !important; transform: translateY(50%) !important; }
+    table.dataTable thead th.sorting::after, table.dataTable thead th.sorting_asc::after, table.dataTable thead th.sorting_desc::after { content: "↓" !important; right: 0.5em !important; font-size: 14px !important; opacity: 0.3 !important; bottom: 50% !important; transform: translateY(50%) !important; }
+    table.dataTable thead th.sorting_asc::before { opacity: 1 !important; color: #0f172a !important; font-weight: 900 !important; }
+    table.dataTable thead th.sorting_desc::after { opacity: 1 !important; color: #0f172a !important; font-weight: 900 !important; }
+
+    #tableSpm td { font-family: 'Roboto', sans-serif !important; font-size: 12px !important; text-align: center !important; padding: 6px 8px !important; white-space: normal !important; word-wrap: break-word; vertical-align: middle; }
+    #tableSpm td:nth-child(2), #tableSpm td:nth-child(5) { text-align: left !important; }
+    #tableSpm td:nth-child(4) { text-align: right !important; }
+
+    /* GAYA KHUSUS MODAL WIZARD */
+    .modal-wizard .nav-tabs { border-bottom: 2px solid #e2e8f0; background: #f8fafc; padding: 10px 10px 0 10px; border-radius: 10px 10px 0 0; }
+    .modal-wizard .nav-tabs .nav-link { color: #64748b; font-weight: 600; padding: 10px 20px; font-size: 0.85rem; border:none; border-bottom: 3px solid transparent; transition: 0.2s; margin-right: 5px; border-radius: 8px 8px 0 0;}
+    .modal-wizard .nav-tabs .nav-link:hover { color: #3b82f6; background: #f1f5f9; }
+    .modal-wizard .nav-tabs .nav-link.active { color: #2563eb; border-bottom: 3px solid #2563eb; background: white; }
+    .modal-wizard .modal-header { border-bottom: none; padding: 1.5rem 1.5rem 1rem; }
+    .modal-wizard .modal-body { padding: 1.5rem; background-color: #f8fafc; }
+    .wizard-card { background: white; padding: 1.5rem; border-radius: 10px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); margin-bottom: 10px;}
+    .modal-wizard .form-label { font-weight: 600; font-size: 0.75rem; margin-bottom: 4px; color: #475569;}
+    .modal-wizard .section-title { border-left: 4px solid #0d6efd; padding-left: 10px; margin-bottom: 15px; color: #0d6efd; font-weight: bold; font-size: 0.95rem; background: #f8f9fa; padding-top:4px; padding-bottom:4px; border-radius: 0 5px 5px 0;}
+    .modal-wizard .total-card { background: #fff; border-radius: 10px; padding: 15px; border: 2px dashed #cbd5e1; }
+    .modal-wizard .readonly-bg { background-color: #f1f5f9 !important; font-weight: bold; color: #0f172a;}
+    .modal-wizard .col-label { display: none; }
+    .modal-wizard .bg-calc { background-color: #fffdf0; font-weight: bold; border-color: #fde047; }
+    #modalPdln .nav-tabs .nav-link.active { color: #dc3545; border-bottom-color: #dc3545; }
+    .password-toggle {
+      cursor: pointer;
+      position: absolute;
+      right: 15px;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+      color: #64748b;
+    }
+    /* --- PENYESUAIAN TINGGI & HURUF KOTAK LOGIN --- */
+    .form-floating > .form-control {
+      height: 3.2rem;
+      min-height: 3.2rem;
+      padding-top: 1.2rem;
+      padding-bottom: 0.2rem;
+      font-size: 0.9rem;
+      background-color: #f0f2f5 !important; /* Tambahkan baris ini untuk warna abu soft */
+      border: 1px solid #ced4da;
+    }
+    .form-floating > label {
+      padding: 0.6rem 0.75rem; 
+      font-size: 0.85rem; /* Ukuran huruf tulisan Username/Password */
+    }
+    .form-floating > label::after {
+      background-color: #f0f2f5 !important;
+      border-radius: 4px;
+    }
+    /* Menyesuaikan posisi ikon mata (Lihat Password) */
+    .password-toggle {
+      top: 45%; 
+    }
+    /* === GAYA DROPDOWN PROFIL BARU === */
+    .custom-dropdown-profile {
+     min-width: 320px;
+      border-radius: 16px; /* Sudut lebih melengkung modern */
+      border: 1px solid #e2e8f0;
+     padding: 0.2rem 0;
+     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+    }
+
+    .profile-header-card {
+      border-color: #e2e8f0 !important;
+     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    }
+
+    .custom-logout-btn {
+      transition: background-color 0.2s ease;
+     margin: 0 8px; /* Memberi jarak aman dari tepi dropdown */
+     width: calc(100% - 16px);
+    }
+
+    .custom-logout-btn:hover {
+      background-color: #f1f5f9; /* Warna abu-abu halus saat disorot */
+      color: #0f172a !important;
+    }
+    /* === ANIMASI KOTAK LOGIN === */
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animasi-masuk {
+      animation: fadeInUp 0.8s ease-out forwards; 
+    }
+  </style>
+</head>
+<body>
+
+<div id="loading-overlay" style="display: none;"><div class="spinner-border text-primary" role="status"></div><div class="mt-3 fw-bold">Memproses Data...</div></div>
+
+<div id="login-page">
+  <div class="card shadow-lg border-0 animasi-masuk" style="width: 100%; max-width: 420px; border-radius: 12px;">
+    <div class="card-body p-4 p-sm-5 text-center"> 
+      
+      <div class="mb-3"> 
+        <img src="https://lh3.googleusercontent.com/d/1l8TqH0EqdKdePrzz61D1IbpZnl3RJ3nC" 
+             alt="Logo PSDKP" 
+             height="55" 
+             class="mb-2"
+             onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/c/c0/Logo_PSDKP.png';">
+        <h6 class="fw-bold mb-1" style="color: #1e293b; line-height: 1.4; font-size: 1.1rem;">Sistem Informasi Monitoring<br>dan Dokumentasi SPM</h6>
+        <p class="text-muted" style="font-size: 0.8rem;">Silakan masuk untuk melanjutkan</p>
+      </div>
+
+      <form id="login-form-area" onsubmit="event.preventDefault(); prosesLogin();">
+        
+        <div class="form-floating mb-3 text-start">
+          <input type="text" class="form-control" id="login-username" name="username" placeholder="Username" autocomplete="username" required>
+          <label for="login-username">Username</label>
+        </div>
+        
+        <div class="form-floating mb-3 text-start" style="position: relative;">
+          <input type="password" class="form-control" id="login-password" name="password" placeholder="Password" autocomplete="current-password" required>
+          <label for="login-password">Password</label>
+          <i class="bi bi-eye password-toggle" id="togglePassword" onclick="togglePasswordVisibility()"></i>
+        </div>
+
+        <div class="mb-3 text-start"> 
+          <div class="d-flex align-items-center mb-2 gap-2 mt-3">
+             <canvas id="display-captcha" width="130" height="45" class="rounded border shadow-sm" style="cursor: pointer; background: #f8fafc;" onclick="generateCaptcha()" title="Klik gambar untuk ganti Captcha"></canvas>
+             
+             <div class="form-floating flex-grow-1">
+               <input type="text" class="form-control" id="input-captcha" name="captcha" placeholder="Captcha" maxlength="4" required>
+               <label for="input-captcha">Captcha</label>
+             </div>
+           </div>
+    
+           <div class="text-center mt-2" style="font-size: 0.85rem;">
+             <span class="text-primary fw-bold" style="cursor: pointer; text-decoration: none;" onclick="generateCaptcha()">Klik disini</span>
+             <span class="text-dark"> untuk memuat ulang CAPTCHA</span>
+           </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 fw-bold py-2 mb-2" id="btn-login">
+          <i class="bi bi-box-arrow-in-right me-1"></i> Masuk Dashboard
+        </button>
+      </form>
+
+      <div id="login-role-area" style="display:none; text-align: left;">
+        <h6 class="fw-bold text-primary mb-3 text-center">Pilih Akses</h6>
+        <div class="mb-3">
+          <label class="form-label small text-muted fw-bold">Login sebagai:</label>
+          <p id="lbl-multi-nama" class="fw-bold text-dark mb-2 border-bottom pb-2"></p>
+          <select id="login-role-select" class="form-select form-select-sm"></select>
+        </div>
+        <button class="btn btn-success w-100 fw-bold py-2 mb-2" onclick="lanjutLoginMulti()">
+          <i class="bi bi-check-circle me-1"></i> Lanjut Masuk
+        </button>
+        <button class="btn btn-outline-secondary w-100 py-1 btn-sm" onclick="batalMultiLogin()">Batal</button>
+      </div>
+
+      <div class="text-start mt-3 pt-3 border-top">
+        <small class="text-muted fw-semibold" style="font-size: 11px;">© 2026 — Direktorat Jenderal PSDKP.</small>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="main-dashboard">
+
+<nav class="navbar navbar-expand-lg top-nav shadow-sm">
+  <div class="container-fluid">
+<a class="navbar-brand d-flex align-items-center" href="#">
+  <img src="https://lh3.googleusercontent.com/d/1l8TqH0EqdKdePrzz61D1IbpZnl3RJ3nC" 
+       alt="Logo PSDKP" 
+       height="45" 
+       class="d-inline-block align-text-top me-2"
+       onerror="this.src='https://upload.wikimedia.org/wikipedia/commons/c/c0/Logo_PSDKP.png';">
+  
+  <span class="fs-6">SiMata | Sistem Informasi Monitoring dan Dokumentasi SPM</span>
+</a>
+    <div class="collapse navbar-collapse">
+      <ul class="nav nav-pills ms-auto align-items-center">
+        <li class="nav-item"><a class="nav-link active" onclick="switchMenu('page-monitoring', this)">Monitoring SPM</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="switchMenu('page-rekap-unit', this)">Rekap Unit</a></li>
+        <li class="nav-item"><a class="nav-link" onclick="switchMenu('page-rekap-bagian', this)">Rekap Bagian</a></li>
+        
+        <li class="nav-item ms-3 border-start border-secondary ps-3 dropdown">
+          <a class="nav-link dropdown-toggle d-flex align-items-center p-0 ms-2" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white !important;">
+            <i class="bi bi-person-circle fs-4 me-2"></i> <span id="nav-user-name" class="fw-bold">User</span>
+          </a>
+<ul class="dropdown-menu dropdown-menu-end shadow custom-dropdown-profile" aria-labelledby="userDropdown">
+  <li class="px-3 py-3">
+    <div class="profile-header-card d-flex align-items-center justify-content-between p-3 border rounded-4 bg-white">
+      <div class="profile-info pe-3 text-break">
+        <h6 class="mb-1 fw-bold text-dark" id="drop-nama" style="font-size: 1.1rem; letter-spacing: -0.3px;">Nama Lengkap</h6>
+        <div class="mb-2">
+          <span class="badge bg-secondary fw-normal" id="drop-role">Role</span>
+        </div>
+        <small class="text-muted fw-medium d-flex align-items-center">
+          <i class="bi bi-building me-2"></i> <span id="drop-unit">Unit Kerja</span>
+        </small>
+      </div>
+      <div class="profile-avatar text-dark opacity-75">
+        <i class="bi bi-person-circle" style="font-size: 3.5rem;"></i>
+      </div>
+    </div>
+  </li>
+
+  <li><hr class="dropdown-divider mx-3 border-secondary-subtle"></li>
+
+  <li class="px-4 py-2" id="container-switch-unit" style="display:none;">
+    <label class="form-label small text-muted fw-bold mb-1">Ganti Hak Akses (Role):</label>
+    <select id="switch-unit-select" class="form-select form-select-sm border-secondary-subtle" onchange="gantiUnitKerja()"></select>
+  </li>
+  <li id="divider-switch-unit" style="display:none;"><hr class="dropdown-divider mx-3 border-secondary-subtle"></li>
+
+  <li class="px-2 pb-2 mt-1">
+    <button class="dropdown-item custom-logout-btn d-flex align-items-center py-2 px-3 rounded-3" onclick="prosesLogout()">
+      <i class="bi bi-box-arrow-right me-3 fs-5 text-dark opacity-75"></i>
+      <span class="fw-medium text-dark">Keluar</span>
+    </button>
+  </li>
+</ul>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main class="main-content">
+<div id="page-monitoring" class="content-page active">
+<div class="d-flex justify-content-between align-items-center mb-3">
+<h5 class="fw-bold m-0 text-dark"><i class="bi bi-table me-2"></i>DATA MONITORING SPP/SPM</h5>
+<div>
+<button class="btn btn-sm btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalFilter"><i class="bi bi-funnel-fill me-1"></i> Filter Data</button>
+<button class="btn btn-sm btn-secondary fw-bold shadow-sm ms-1" onclick="resetFilter()"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+<button class="btn btn-sm btn-success fw-bold shadow-sm ms-1" onclick="ambilDataServer()"><i class="bi bi-arrow-clockwise me-1"></i> Refresh Data & Sync</button>
+</div>
+</div>
+<div class="table-responsive-container">
+<table id="tableSpm" class="table table-hover table-sm w-100"><thead style="background-color: #f1f5f9;"><tr><th>NO. SPP/SPM</th><th>JENIS SPP/SPM</th><th>TANGGAL SP2D</th><th>JUMLAH PENGELUARAN</th><th>URAIAN</th><th>UNIT KERJA</th><th class="text-center">FISIK</th><th class="text-center">SCAN</th><th class="text-center">REKAP</th></tr></thead><tbody id="tbodySpm"></tbody></table>
+</div>
+</div>
+
+<div id="page-rekap-unit" class="content-page"><div class="scrollable-area"><div class="d-flex justify-content-between align-items-center mb-3">
+<h5 class="fw-bold m-0 text-dark">REKAPITULASI PER UNIT KERJA</h5>
+<div>
+<button class="btn btn-sm btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalFilter"><i class="bi bi-funnel-fill me-1"></i> Filter Tanggal</button>
+<button class="btn btn-sm btn-secondary fw-bold shadow-sm ms-1" onclick="resetFilter()"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+</div>
+</div><div class="row g-3 mb-4 align-items-stretch"><div class="col-md-6"><div class="table-responsive-container h-100"><table class="table table-bordered table-sm align-middle table-rekap table-fixed mb-0 h-100"><thead><tr><th rowspan="2" style="width: 180px;">UNIT KERJA</th><th rowspan="2" style="width: 80px;">TOTAL</th><th colspan="2">FISIK</th><th colspan="2">REKAP</th><th colspan="2">SCAN</th></tr><tr><th style="width: 60px;">JML</th><th style="width: 110px;">%</th><th style="width: 60px;">JML</th><th style="width: 110px;">%</th><th style="width: 60px;">JML</th><th style="width: 110px;">%</th></tr></thead><tbody id="tbody-rekap-unit"></tbody><tfoot id="tfoot-rekap-unit"></tfoot></table></div></div><div class="col-md-6"><div class="chart-panel h-100"><h6 class="fw-bold small text-secondary mb-2">GRAFIK TOTAL SPM</h6><div style="flex:1; min-height: 200px; display: flex; align-items: center;"><canvas id="chartUnit"></canvas></div></div></div></div><hr><div class="d-flex justify-content-between align-items-center mb-3"><h5 class="fw-bold m-0 text-dark">PROGRES JENIS SPM PER UNIT</h5><select id="f-unit-detail" class="form-select form-select-sm" style="width: 200px;"
+onchange="updateDetailJenisUnit()"></select></div><div class="table-responsive-container"><table class="table table-bordered table-sm align-middle table-rekap table-fixed mb-0"><thead><tr><th rowspan="2" style="width: 300px;">JENIS SPP/SPM</th><th rowspan="2" style="width: 110px;">TOTAL</th><th colspan="2">FISIK</th><th colspan="2">REKAP</th><th colspan="2">SCAN</th></tr><tr><th style="width: 50px;">JML</th><th style="width: 90px;">%</th><th style="width: 50px;">JML</th><th style="width: 90px;">%</th><th style="width: 50px;">JML</th><th style="width: 90px;">%</th></tr></thead><tbody id="tbody-detail-jenis"></tbody><tfoot><tr id="tfoot-detail-jenis"></tr></tfoot></table></div></div></div>
+
+<div id="page-rekap-bagian" class="content-page"><div class="scrollable-area"><div class="d-flex justify-content-between align-items-center mb-3">
+<h5 class="fw-bold m-0 text-dark">REKAPITULASI PER BAGIAN / SUBKOOR</h5>
+<div>
+<button class="btn btn-sm btn-primary fw-bold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalFilter"><i class="bi bi-funnel-fill me-1"></i> Filter Tanggal</button>
+<button class="btn btn-sm btn-secondary fw-bold shadow-sm ms-1" onclick="resetFilter()"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+</div>
+</div><div class="card p-3 mb-4 bg-white border shadow-sm"><div class="row align-items-center"><div class="col-md-4"><label class="fw-bold small text-primary mb-1"><i class="bi bi-building me-1"></i>PILIH UNIT KERJA :</label><select id="f-unit-rekap" class="form-select form-select-sm" onchange="updateRekapBagian()"></select></div><div class="col-md-8 text-end"><span class="badge bg-primary px-3 py-2" id="label-unit-terpilih">UNIT: -</span></div></div></div><div class="row g-3 mb-4 align-items-stretch"><div class="col-md-7"><div class="table-responsive-container h-100"><table class="table table-bordered table-sm align-middle table-rekap table-fixed mb-0 h-100"><thead><tr><th rowspan="2" style="width: 180px;">BAGIAN / TIM KERJA</th><th rowspan="2" style="width: 80px;">TOTAL</th><th colspan="2">FISIK</th><th colspan="2">REKAP</th><th colspan="2">SCAN</th></tr><tr><th style="width: 60px;">JML</th><th style="width: 110px;">%</th><th style="width: 60px;">JML</th><th style="width: 110px;">%</th><th style="width: 60px;">JML</th><th style="width: 110px;">%</th></tr></thead><tbody id="tbody-rekap-bagian"></tbody><tfoot id="tfoot-rekap-bagian"></tfoot></table></div></div><div class="col-md-5"><div class="chart-panel h-100"><h6 class="fw-bold small text-secondary mb-3 text-center">GRAFIK DISTRIBUSI SPM PER BAGIAN</h6><div style="flex:1;
+min-height: 250px; display: flex; align-items: center;"><canvas id="chartBagian"></canvas></div></div></div></div><hr><div class="d-flex justify-content-between align-items-center mb-3"><div><h5 class="fw-bold m-0 text-dark">PROGRES JENIS SPM</h5><p class="text-muted small mb-0">Detail progres berdasarkan jenis dokumen pada bagian terpilih</p></div><div class="d-flex align-items-center"><label class="fw-bold small text-secondary me-2">FILTER BAGIAN:</label><select id="f-bagian-jenis-filter" class="form-select form-select-sm" style="width: 250px;" onchange="renderTabelJenisBagian()"></select></div></div><div class="table-responsive-container"><table class="table table-bordered table-sm align-middle table-rekap table-fixed mb-0"><thead><tr><th rowspan="2" style="width: 300px;">JENIS SPP/SPM</th><th rowspan="2" style="width: 110px;">TOTAL</th><th colspan="2">FISIK</th><th colspan="2">REKAP</th><th colspan="2">SCAN</th></tr><tr><th style="width: 50px;">JML</th><th style="width: 90px;">%</th><th style="width: 50px;">JML</th><th style="width: 90px;">%</th><th style="width: 50px;">JML</th><th style="width: 90px;">%</th></tr></thead><tbody id="tbody-bagian-jenis"></tbody><tfoot id="tfoot-bagian-jenis"></tfoot></table></div></div></div>
+</main>
+
+<div class="modal fade" id="modalFolderScan" tabindex="-1">
+<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content shadow-lg border-0">
+<div class="modal-header bg-primary text-white">
+<h6 class="modal-title fw-bold"><i class="bi bi-folder2-open me-2"></i>Berkas Fisik (Scan)</h6>
+<button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body text-center p-4">
+
+<div id="scan-state-loading">
+<div class="spinner-border text-primary" role="status"></div>
+<div class="mt-3 fw-bold text-secondary">Memeriksa Folder...</div>
+</div>
+
+<div id="scan-state-notfound" style="display:none;">
+<i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+<h6 class="fw-bold mt-3">Folder Tidak Ditemukan</h6>
+<p class="small text-muted">Gagal membuka folder: Folder Scan SPM belum dibuat. Silakan upload scan rekap terlebih dahulu, atau buat manual sekarang.</p>
+<button class="btn btn-success fw-bold mt-2 px-4" onclick="prosesBuatFolder()"><i class="bi bi-folder-plus me-2"></i>Buat Folder Sekarang</button>
+</div>
+
+<div id="scan-state-found" style="display:none;">
+<i class="bi bi-folder-check text-success" style="font-size: 3.5rem;"></i>
+<h6 class="fw-bold mt-2 mb-3">Folder Utama Tersedia</h6>
+<button id="btn-lihat-dokumen" class="btn btn-outline-primary fw-bold mb-4 px-4"><i class="bi bi-box-arrow-up-right me-2"></i>Lihat Semua Dokumen di Drive</button>
+
+<hr>
+
+<div class="text-start mt-3 mb-4">
+<h6 class="fw-bold mb-3 text-dark"><i class="bi bi-card-checklist me-2"></i>Daftar Rincian Rekap (Upload Scan per Item)</h6>
+<div class="table-responsive">
+<table class="table table-bordered align-middle table-sm">
+<thead class="table-light text-center small">
+<tr>
+<th>Kategori</th>
+<th>Nilai</th>
+<th>PIC Scan</th>
+<th>Aksi</th>
+</tr>
+</thead>
+<tbody id="tabel-rekap-scan-body">
+</tbody>
+</table>
+</div>
+</div>
+
+<hr>
+
+<div class="text-start bg-light p-3 rounded border border-secondary-subtle">
+<label class="form-label small fw-bold text-dark"><i class="bi bi-cloud-arrow-up me-1"></i>Upload Dokumen Tambahan (Opsional)</label>
+<p class="small text-muted mb-2" style="font-size: 11px;">Gunakan ini HANYA untuk dokumen di luar rincian tabel rekap di atas.</p>
+<input type="file" id="inp-scan-tambahan" class="form-control form-control-sm border-primary" multiple disabled>
+
+<div class="mt-3">
+<label class="form-label small fw-bold text-success"><i class="bi bi-link-45deg me-1"></i> atau Paste Link Drive</label>
+<input type="text" id="inp-link-tambahan" class="form-control form-control-sm border-success form-link-drive" placeholder="Tempel link file Drive di sini..." disabled>
+</div>
+<small class="text-muted d-block mt-1" style="font-size: 10px;">*Pilih upload fisik ATAU tempel link.</small>
+
+<button id="btn-upload-tambahan" class="btn btn-primary btn-sm w-100 fw-bold mt-3" onclick="prosesUploadTambahan()" disabled>Upload Tambahan</button>
+<div id="upload-progress-text" class="small fw-bold text-center text-primary mt-2" style="display:none;"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal fade" id="modalFilter" tabindex="-1"><div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable"><div class="modal-content border-0 shadow"><div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold"><i class="bi bi-funnel"></i> Form Filter Data SPM</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body bg-light"><div class="row g-3"><div class="col-md-6"><label class="form-label small fw-bold text-secondary">Unit Kerja</label><select id="filter-unit" class="form-select form-select-sm"><option value="">Semua Unit</option></select></div><div class="col-md-6"><label class="form-label small fw-bold text-secondary">Jenis SPP/SPM</label><select id="filter-jenis" class="form-select form-select-sm"><option value="">Semua Jenis</option></select></div><div class="col-md-4"><label class="form-label small fw-bold text-secondary">Progres Fisik</label><select id="filter-fisik" class="form-select form-select-sm"><option value="">Semua</option><option value="true">Sudah</option><option value="false">Belum</option></select></div><div class="col-md-4"><label class="form-label small fw-bold text-secondary">Progres Rekap</label><select id="filter-rekap" class="form-select form-select-sm"><option value="">Semua</option><option value="true">Selesai</option><option value="false">Belum</option><option value="TIDAK SESUAI">Tidak Sesuai</option></select></div><div class="col-md-4"><label class="form-label small fw-bold text-secondary">Progres Scan</label><select id="filter-scan" class="form-select form-select-sm"><option value="">Semua</option><option value="true">Sudah</option><option value="false">Belum</option></select></div><div class="col-12 mt-4 mb-2 border-bottom border-secondary-subtle"><h6 class="fw-bold m-0 small 
+text-primary"><i class="bi bi-calendar3"></i> Filter Berdasarkan Tanggal</h6></div><div class="col-md-4"><label class="form-label small fw-bold text-secondary">Jenis Tanggal</label><select id="filter-tgl-jenis" class="form-select form-select-sm"><option value="Tanggal SP2D">Tgl SP2D</option></select></div><div class="col-md-4"><label class="form-label small fw-bold text-secondary">Tgl Awal</label><input type="date" id="filter-tgl-awal" class="form-control form-control-sm"></div><div class="col-md-4"><label class="form-label small fw-bold text-secondary">Tgl Akhir</label><input type="date" id="filter-tgl-akhir" class="form-control form-control-sm"></div></div></div>
+<div class="modal-footer">
+  <button class="btn btn-outline-secondary fw-bold" onclick="resetFilter();" data-bs-dismiss="modal">
+    <i class="bi bi-arrow-counterclockwise"></i> Reset
+  </button>
+  <button class="btn btn-primary fw-bold px-4" onclick="terapkanFilter();" data-bs-dismiss="modal">
+    <i class="bi bi-check2"></i> Terapkan Filter
+  </button>
+</div></div></div></div>
+
+<div class="modal fade" id="modalStatusFisikScan" tabindex="-1"><div class="modal-dialog modal-sm modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-light"><h6 class="modal-title fw-bold">Update <span id="lbl-status-judul" class="text-primary"></span></h6><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body text-center"><p class="small mb-2">No SPM: <strong id="lbl-status-spm"></strong></p><div class="btn-group w-100" role="group"><input type="radio" class="btn-check" name="opsiStatus" id="opsiSudah" value="true"><label class="btn btn-outline-success" for="opsiSudah"><i class="bi bi-check-circle"></i> Sudah</label><input type="radio" class="btn-check" name="opsiStatus" id="opsiBelum" value="false"><label class="btn btn-outline-danger" for="opsiBelum"><i class="bi bi-x-circle"></i> Belum</label></div></div><div class="modal-footer p-1"><button type="button" class="btn btn-primary btn-sm w-100 fw-bold" id="btn-simpan-status" onclick="simpanStatusFisikScan()">Simpan Perubahan</button></div></div></div></div>
+
+<div class="modal fade" id="modalRekap" tabindex="-1">
+<div class="modal-dialog modal-lg modal-dialog-scrollable">
+<div class="modal-content">
+<div class="modal-header bg-light"><h5 class="modal-title fw-bold">Daftar Rekap: <span id="lbl-no-spm" class="text-primary"></span></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div class="row mb-3 bg-white border rounded p-2 mx-1 shadow-sm">
+<div class="col-md-6"><small class="text-muted d-block">Pagu SPM (Data Utama)</small><span class="fw-bold fs-5 text-dark" id="lbl-pagu-spm">Rp 0</span></div>
+<div class="col-md-6 text-end"><small class="text-muted d-block">Total Telah Direkap</small><span class="fw-bold fs-5 text-success" id="lbl-total-rekap">Rp 0</span></div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+<h6 class="fw-bold m-0">Histori Rekap</h6>
+<button class="btn btn-sm btn-primary" onclick="bukaFormTambah()"><i class="bi bi-plus-lg"></i> Tambah Rekap Baru</button>
+</div>
+<div id="loading-rekap" class="text-center py-3" style="display:none;"><div class="spinner-border spinner-border-sm text-primary"></div> Mengambil data...</div>
+<div class="table-responsive">
+<table class="table table-bordered table-sm"><thead class="table-light"><tr><th>Kategori Rekap</th><th>PIC Rekap</th><th>Jumlah Pengeluaran</th><th class="text-center">Aksi</th></tr></thead><tbody id="tbody-list-rekap"></tbody></table>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal fade" id="modalFormRekap" tabindex="-1">
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content border-0 shadow">
+<div class="modal-header bg-primary text-white"><h6 class="modal-title fw-bold" id="titleFormBiasa">Pilih Kategori Rekap</h6><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<div class="mb-3">
+<label class="form-label small fw-bold">Pilih Kategori Kuitansi/Bukti</label>
+<select id="inp-kategori" class="form-select">
+<option value="Perjalanan Dinas Dalam Negeri">Perjalanan Dinas Dalam Negeri</option>
+<option value="Perjalanan Dinas Luar Negeri">Perjalanan Dinas Luar Negeri</option>
+<option value="Belanja Barang dan Jasa">Belanja Barang dan Jasa</option>
+<option value="Honor">Honor</option>
+<option value="Pemeliharaan, Persediaan, Modal">Pemeliharaan, Persediaan, Modal</option>
+<option value="Paket Fullboard">Paket Fullboard</option>
+<option value="Belanja Pegawai">Belanja Pegawai</option>
+</select>
+</div>
+<div id="generic-input-area" style="display: none;">
+<div class="mb-3">
+<label class="form-label small fw-bold">Nilai Rekap (Rp)</label>
+<input type="text" inputmode="numeric" id="inp-nilai-display" class="form-control fw-bold text-success format-rupiah" placeholder="Contoh: 5.000.000">
+<div class="mt-1 d-flex justify-content-between"><small id="lbl-sisa-pagu" class="fw-bold text-primary">Sisa Pagu: Rp 0</small></div>
+</div>
+<div class="mb-3">
+<label class="form-label small fw-bold text-primary"><i class="bi bi-upload me-1"></i> Upload Bukti Scan (Maks 30MB)</label>
+<input type="file" id="inp-scan-biasa" class="form-control form-control-sm file-scan border-primary" accept=".pdf,image/*">
+<div class="mt-2">
+<label class="form-label small fw-bold text-success"><i class="bi bi-link-45deg me-1"></i> atau Paste Link Drive</label>
+<input type="text" id="inp-link-biasa" class="form-control form-control-sm border-success form-link-drive" placeholder="Tempel link file Drive di sini...">
+</div>
+<small class="text-muted d-block mt-1" style="font-size: 10px;">*Pilih salah satu (Upload atau Link).
+Kosongkan jika ingin menyusul atau tidak ada perubahan saat Edit.</small>
+</div>
+</div>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" onclick="$('#modalFormRekap').modal('hide')">Batal</button>
+<button type="button" class="btn btn-primary" id="btn-simpan-rekap" onclick="prosesSimpanRekap()" style="display: none;">Simpan Rekap</button>
+<button type="button" class="btn btn-success fw-bold px-4 btn-lanjut" id="btn-lanjut-pd" onclick="bukaModalPD()">Lanjut Isi Detail DN <i class="bi bi-arrow-right ms-1"></i></button>
+<button type="button" class="btn btn-danger fw-bold px-4 btn-lanjut" id="btn-lanjut-pdln" onclick="bukaModalPDLN()">Lanjut Isi Detail LN <i class="bi bi-arrow-right ms-1"></i></button>
+<button type="button" class="btn btn-warning fw-bold px-4 btn-lanjut text-dark" id="btn-lanjut-bj" onclick="bukaModalDynamic('Belanja Barang dan Jasa')">Lanjut Isi Detail Brg & Jasa <i class="bi bi-arrow-right ms-1"></i></button>
+<button type="button" class="btn btn-info fw-bold px-4 btn-lanjut text-white" id="btn-lanjut-hn" onclick="bukaModalDynamic('Honor')">Lanjut Isi Detail Honor <i class="bi bi-arrow-right ms-1"></i></button>
+<button type="button" class="btn btn-secondary fw-bold px-4 btn-lanjut text-white" id="btn-lanjut-ppm" onclick="bukaModalDynamic('Pemeliharaan, Persediaan, Modal')">Lanjut Isi Pemeliharaan <i class="bi bi-arrow-right ms-1"></i></button>
+<button type="button" class="btn btn-dark fw-bold px-4 btn-lanjut text-white" id="btn-lanjut-fb" onclick="bukaModalDynamic('Paket Fullboard')">Lanjut Isi Paket Fullboard <i class="bi bi-arrow-right ms-1"></i></button>
+<button type="button" class="btn btn-primary fw-bold px-4 btn-lanjut text-white" id="btn-lanjut-bp" onclick="bukaModalDynamic('Belanja Pegawai')">Lanjut Isi Belanja Pegawai <i class="bi bi-arrow-right ms-1"></i></button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal fade modal-wizard" id="modalBj" tabindex="-1" data-bs-backdrop="static">
+<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content shadow-lg">
+<div class="modal-header bg-warning text-dark">
+<h5 class="modal-title fw-bold" id="titleFormBJ"><i class="bi bi-cart-check me-2"></i>Belanja Barang dan Jasa</h5>
+<button type="button" class="btn-close" onclick="tutupDynamic('#modalBj')"></button>
+</div>
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#bj-umum" type="button">1. Data Umum</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#bj-bayar" type="button">2. Pembayaran</button></li>
+</ul>
+<div class="modal-body">
+<div class="tab-content">
+<div class="tab-pane fade show active" id="bj-umum">
+<div class="wizard-card">
+<h6 class="section-title">Informasi Utama</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">No SPM <span class="col-label">(A)</span></label><input type="text" class="form-control form-control-sm bg-readonly" id="bj-0" readonly></div>
+<div class="col-md-4"><label class="form-label">Akun Belanja <span class="col-label">(B)</span></label><input type="number" class="form-control form-control-sm" id="bj-1"></div>
+<div class="col-md-4"><label class="form-label">No. Kwitansi <span class="col-label">(C)</span></label><input type="text" class="form-control form-control-sm" id="bj-2"></div>
+<div class="col-md-4"><label class="form-label">Tanggal Kwitansi <span class="col-label">(D)</span></label><input type="date" class="form-control form-control-sm" id="bj-3"></div>
+<div class="col-md-8"><label class="form-label">Keterangan Kegiatan <span class="col-label">(E)</span></label><input type="text" class="form-control form-control-sm" id="bj-4"></div>
+<div class="col-md-12"><label class="form-label">Nama Pihak Ketiga <span class="col-label">(F)</span></label><input type="text" class="form-control form-control-sm" id="bj-5"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="bj-bayar">
+<div class="wizard-card">
+<h6 class="section-title">Kalkulasi Pembayaran</h6>
+<div class="row g-2">
+<div class="col-md-6"><label class="form-label">No Faktur Pajak <span class="col-label">(G)</span></label><input type="text" class="form-control form-control-sm" id="bj-6"></div>
+<div class="col-md-6"><label class="form-label">Nilai PPN <span class="col-label">(H)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="bj-7"></div>
+<div class="col-md-6"><label class="form-label">Nilai PPh 21 <span class="col-label">(I)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="bj-8"></div>
+<div class="col-md-6"><label class="form-label">Nilai PPh 22 <span class="col-label">(J)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="bj-9"></div>
+<div class="col-md-6"><label class="form-label">Nilai PPh 23 <span class="col-label">(K)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="bj-10"></div>
+<div class="col-md-6"><label class="form-label">Nilai PPh 15 <span class="col-label">(L)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="bj-11"></div>
+<div class="col-md-12 mt-3"><label class="form-label text-primary">Nilai Pengeluaran<span class="col-label">(M)</span></label><input type="text" class="form-control form-control-lg format-rupiah bg-calc text-primary fw-bold calc-sisa target-rekap-bj" id="bj-12"></div>
+<div class="col-12 mt-3">
+<label class="form-label text-primary"><i class="bi bi-upload me-1"></i> Upload Bukti Scan (Maks 30MB)</label>
+<input type="file" class="form-control form-control-sm file-scan border-primary" id="inp-scan-bj" accept=".pdf,image/*">
+<div class="mt-2">
+<label class="form-label small fw-bold text-success"><i class="bi bi-link-45deg me-1"></i> atau Paste Link Drive</label>
+<input type="text" id="inp-link-bj" class="form-control form-control-sm border-success form-link-drive" placeholder="Tempel link file Drive di sini...">
+</div>
+<small class="text-muted d-block mt-1" style="font-size: 10px;">*Pilih salah satu (Upload atau Link).
+Kosongkan jika ingin menyusul atau tidak ada perubahan saat Edit.</small>
+</div>
+<div class="col-12 text-center mt-2 alert-sisa fw-bold text-primary">Sisa Pagu Aman</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-footer border-0 bg-white d-flex justify-content-between p-3 border-top">
+<button type="button" class="btn btn-outline-secondary fw-bold" onclick="tutupDynamic('#modalBj')">Tutup</button>
+<div>
+<button type="button" class="btn btn-secondary btn-kembali-tab d-none fw-bold" onclick="prevTab('modalBj')"><i class="bi bi-arrow-left me-1"></i> Sebelumnya</button>
+<button type="button" class="btn btn-primary btn-lanjut-tab fw-bold px-4" onclick="nextTab('modalBj')">Lanjut <i class="bi bi-arrow-right ms-1"></i></button>
+<button class="btn btn-warning fw-bold text-dark px-4 d-none" id="btn-simpan-bj" onclick="simpanDynamic('Belanja Barang dan Jasa')"><i class="bi bi-save me-2"></i> Simpan Data</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal fade modal-wizard" id="modalHn" tabindex="-1" data-bs-backdrop="static">
+<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content shadow-lg">
+<div class="modal-header bg-info text-white">
+<h5 class="modal-title fw-bold" id="titleFormHN"><i class="bi bi-people me-2"></i>Detail Honor</h5>
+<button type="button" class="btn-close btn-close-white" onclick="tutupDynamic('#modalHn')"></button>
+</div>
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#hn-umum" type="button">1. Data Umum</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#hn-bayar" type="button">2. Pembayaran</button></li>
+</ul>
+<div class="modal-body">
+<div class="tab-content">
+<div class="tab-pane fade show active" id="hn-umum">
+<div class="wizard-card">
+<h6 class="section-title">Informasi Umum</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">No SPM <span class="col-label">(A)</span></label><input type="text" class="form-control form-control-sm bg-readonly" id="hn-0" readonly></div>
+<div class="col-md-4"><label class="form-label">Akun Belanja <span class="col-label">(B)</span></label><input type="number" class="form-control form-control-sm" id="hn-1"></div>
+<div class="col-md-4"><label class="form-label">Jenis Honor <span class="col-label">(C)</span></label><input type="text" class="form-control form-control-sm" id="hn-2"></div>
+<div class="col-md-4"><label class="form-label">Tanggal <span class="col-label">(D)</span></label><input type="date" class="form-control form-control-sm" id="hn-3"></div>
+<div class="col-md-4"><label class="form-label">Nama <span class="col-label">(E)</span></label><input type="text" class="form-control form-control-sm" id="hn-4"></div>
+<div class="col-md-4"><label class="form-label">Kegiatan <span class="col-label">(F)</span></label><input type="text" class="form-control form-control-sm" id="hn-5"></div>
+<div class="col-md-4"><label class="form-label">Nomor SK <span class="col-label">(G)</span></label><input type="text" class="form-control form-control-sm" id="hn-6"></div>
+<div class="col-md-4"><label class="form-label">Jabatan <span class="col-label">(H)</span></label><input type="text" class="form-control form-control-sm" id="hn-7"></div>
+<div class="col-md-4"><label class="form-label">Bulan <span class="col-label">(I)</span></label><input type="text" class="form-control form-control-sm" id="hn-8" placeholder="Contoh: Januari / Januari - Maret"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="hn-bayar">
+<div class="wizard-card">
+<h6 class="section-title">Kalkulasi Pembayaran</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">Satuan <span class="col-label">(J)</span></label><input type="text" class="form-control form-control-sm" id="hn-9"></div>
+<div class="col-md-4"><label class="form-label">Volume <span class="col-label">(K)</span></label><input type="number" class="form-control form-control-sm calc-hn target-rekap-hn" id="hn-10"></div>
+<div class="col-md-4"><label class="form-label">Rupiah Satuan <span class="col-label">(L)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-hn target-rekap-hn" id="hn-11"></div>
+<div class="col-md-12 mt-2"><label class="form-label text-primary">Total Diterima<span class="col-label">(M)</span></label><input type="text" class="form-control form-control-sm bg-calc text-primary fw-bold" id="hn-12" readonly></div>
+<div class="col-md-6 mt-2"><label class="form-label text-danger">PPh 21 <span class="col-label">(N)</span></label><input type="text" class="form-control form-control-sm format-rupiah text-danger calc-hn" id="hn-13"></div>
+<div class="col-md-6 mt-2"><label class="form-label text-success">Netto Diterima <span class="col-label">(O)</span></label><input type="text" class="form-control form-control-sm bg-calc text-success" id="hn-14" readonly></div>
+<div class="col-12 mt-3">
+<label class="form-label text-primary"><i class="bi bi-upload me-1"></i> Upload Scan - Maks 30MB</label>
+<input type="file" class="form-control form-control-sm file-scan border-primary" id="inp-scan-hn" accept=".pdf,image/*">
+<div class="mt-2">
+<label class="form-label small fw-bold text-success"><i class="bi bi-link-45deg me-1"></i> atau Paste Link Drive</label>
+<input type="text" id="inp-link-hn" class="form-control form-control-sm border-success form-link-drive" placeholder="Tempel link file Drive di sini...">
+</div>
+<small class="text-muted d-block mt-1" style="font-size: 10px;">*Pilih salah satu (Upload atau Link).
+Kosongkan jika ingin menyusul atau tidak ada perubahan saat Edit.</small>
+</div>
+<div class="col-12 text-center mt-3 alert-sisa fw-bold text-primary">Sisa Pagu Aman</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-footer border-0 bg-white d-flex justify-content-between p-3 border-top">
+<button type="button" class="btn btn-outline-secondary fw-bold" onclick="tutupDynamic('#modalHn')">Tutup</button>
+<div>
+<button type="button" class="btn btn-secondary btn-kembali-tab d-none fw-bold" onclick="prevTab('modalHn')"><i class="bi bi-arrow-left me-1"></i> Sebelumnya</button>
+<button type="button" class="btn btn-primary btn-lanjut-tab fw-bold px-4" onclick="nextTab('modalHn')">Lanjut <i class="bi bi-arrow-right ms-1"></i></button>
+<button class="btn btn-info fw-bold text-white px-4 d-none" id="btn-simpan-hn" onclick="simpanDynamic('Honor')"><i class="bi bi-save me-2"></i> Simpan Data</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal fade modal-wizard" id="modalPpm" tabindex="-1" data-bs-backdrop="static">
+<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content shadow-lg">
+<div class="modal-header bg-success text-white">
+<h5 class="modal-title fw-bold" id="titleFormPPM"><i class="bi bi-tools me-2"></i>Pemeliharaan & Modal</h5>
+<button type="button" class="btn-close btn-close-white" onclick="tutupDynamic('#modalPpm')"></button>
+</div>
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#ppm-umum" type="button">1. Umum & Kontrak</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#ppm-bayar" type="button">2. Pembayaran & BAST</button></li>
+</ul>
+<div class="modal-body">
+<div class="tab-content">
+<div class="tab-pane fade show active" id="ppm-umum">
+<div class="wizard-card">
+<h6 class="section-title">Informasi Kontrak</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">No SPM <span class="col-label">(A)</span></label><input type="text" class="form-control form-control-sm bg-readonly" id="ppm-0" readonly></div>
+<div class="col-md-4"><label class="form-label">Akun Belanja <span class="col-label">(B)</span></label><input type="number" class="form-control form-control-sm" id="ppm-1"></div>
+<div class="col-md-4"><label class="form-label">Pihak Ketiga <span class="col-label">(K)</span></label><input type="text" class="form-control form-control-sm" id="ppm-10"></div>
+<div class="col-md-12"><label class="form-label">Nama Kegiatan <span class="col-label">(C)</span></label><input type="text" class="form-control form-control-sm" id="ppm-2"></div>
+<div class="col-md-6"><label class="form-label">Tgl Mulai <span class="col-label">(D)</span></label><input type="date" class="form-control form-control-sm" id="ppm-3"></div>
+<div class="col-md-6"><label class="form-label">Tgl Akhir <span class="col-label">(E)</span></label><input type="date" class="form-control form-control-sm" id="ppm-4"></div>
+<div class="col-md-6 mt-3"><label class="form-label">Nomor Kontrak <span class="col-label">(F)</span></label><input type="text" class="form-control form-control-sm" id="ppm-5"></div>
+<div class="col-md-6 mt-3"><label class="form-label">Tgl Kontrak <span class="col-label">(G)</span></label><input type="date" class="form-control form-control-sm" id="ppm-6"></div>
+<div class="col-md-6"><label class="form-label">No Adendum <span class="col-label">(H)</span></label><input type="text" class="form-control form-control-sm" id="ppm-7"></div>
+<div class="col-md-6"><label class="form-label">Tgl Adendum <span class="col-label">(I)</span></label><input type="date" class="form-control form-control-sm" id="ppm-8"></div>
+<div class="col-md-12 mt-3"><label class="form-label text-primary">Nilai Kontrak <span class="col-label">(J)</span></label><input type="text" class="form-control form-control-sm format-rupiah text-primary bg-calc calc-ppm target-rekap-ppm" id="ppm-9"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="ppm-bayar">
+<div class="wizard-card mb-3">
+<h6 class="section-title">Kalkulasi Pajak</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">PPN <span class="col-label">(L)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="ppm-11"></div>
+<div class="col-md-4"><label class="form-label">PPh 22 <span class="col-label">(M)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="ppm-12"></div>
+<div class="col-md-4"><label class="form-label">PPh 23 <span class="col-label">(N)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="ppm-13"></div>
+<div class="col-md-12 mt-2"><label class="form-label text-primary">Nilai Dibayar<span class="col-label">(O)</span></label><input type="text" class="form-control form-control-sm text-primary fw-bold bg-calc" id="ppm-14" readonly></div>
+<div class="col-12 text-center mt-2 alert-sisa fw-bold text-primary">Sisa Pagu Aman</div>
+</div>
+</div>
+<div class="wizard-card">
+<h6 class="section-title">Informasi BAST</h6>
+<div class="row g-2">
+<div class="col-md-6"><label class="form-label">Nomor PHO (Provisional Hand Over) <span class="col-label">(P)</span></label><input type="text" class="form-control form-control-sm" id="ppm-15"></div>
+<div class="col-md-6"><label class="form-label">Tanggal PHO (Provisional Hand Over) <span class="col-label">(Q)</span></label><input type="date" class="form-control form-control-sm" id="ppm-16"></div>
+<div class="col-md-6"><label class="form-label">Provinsi <span class="col-label">(R)</span></label><input type="text" class="form-control form-control-sm" id="ppm-17"></div>
+<div class="col-md-6"><label class="form-label">Kab/Kota <span class="col-label">(S)</span></label><input type="text" class="form-control form-control-sm" id="ppm-18"></div>
+<div class="col-md-6"><label class="form-label">Latitude <span class="col-label">(T)</span></label><input type="text" class="form-control form-control-sm" id="ppm-19"></div>
+<div class="col-md-6"><label class="form-label">Longitude <span class="col-label">(U)</span></label><input type="text" class="form-control form-control-sm" id="ppm-20"></div>
+<div class="col-12 mt-3">
+<label class="form-label text-primary"><i class="bi bi-upload me-1"></i> Upload Scan - Maks 30MB</label>
+<input type="file" class="form-control form-control-sm file-scan border-primary" id="inp-scan-ppm" accept=".pdf,image/*">
+<div class="mt-2">
+<label class="form-label small fw-bold text-success"><i class="bi bi-link-45deg me-1"></i> atau Paste Link Drive</label>
+<input type="text" id="inp-link-ppm" class="form-control form-control-sm border-success form-link-drive" placeholder="Tempel link file Drive di sini...">
+</div>
+<small class="text-muted d-block mt-1" style="font-size: 10px;">*Pilih salah satu (Upload atau Link).
+Kosongkan jika ingin menyusul atau tidak ada perubahan saat Edit.</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-footer border-0 bg-white d-flex justify-content-between p-3 border-top">
+<button type="button" class="btn btn-outline-secondary fw-bold" onclick="tutupDynamic('#modalPpm')">Tutup</button>
+<div>
+<button type="button" class="btn btn-secondary btn-kembali-tab d-none fw-bold" onclick="prevTab('modalPpm')"><i class="bi bi-arrow-left me-1"></i> Sebelumnya</button>
+<button type="button" class="btn btn-primary btn-lanjut-tab fw-bold px-4" onclick="nextTab('modalPpm')">Lanjut <i class="bi bi-arrow-right ms-1"></i></button>
+<button class="btn btn-success fw-bold px-4 d-none" id="btn-simpan-ppm" onclick="simpanDynamic('Pemeliharaan, Persediaan, Modal')"><i class="bi bi-save me-2"></i> Simpan Data</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal fade modal-wizard" id="modalFb" tabindex="-1" data-bs-backdrop="static">
+<div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content shadow-lg">
+<div class="modal-header bg-dark text-white">
+<h5 class="modal-title fw-bold" id="titleFormFB"><i class="bi bi-briefcase me-2"></i>Paket Fullboard</h5>
+<button type="button" class="btn-close btn-close-white" onclick="tutupDynamic('#modalFb')"></button>
+</div>
+<ul class="nav nav-tabs" role="tablist">
+<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#fb-umum" type="button">1. Data Umum</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#fb-bayar" type="button">2. Pembayaran</button></li>
+</ul>
+<div class="modal-body">
+<div class="tab-content">
+<div class="tab-pane fade show active" id="fb-umum">
+<div class="wizard-card">
+<h6 class="section-title">Informasi Kontrak</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">No SPM <span class="col-label">(A)</span></label><input type="text" class="form-control form-control-sm bg-readonly" id="fb-0" readonly></div>
+<div class="col-md-4"><label class="form-label">No Kontrak <span class="col-label">(B)</span></label><input type="text" class="form-control form-control-sm" id="fb-1"></div>
+<div class="col-md-4"><label class="form-label">Tgl Kontrak <span class="col-label">(C)</span></label><input type="date" class="form-control form-control-sm" id="fb-2"></div>
+<div class="col-md-12"><label class="form-label">Nama Kegiatan <span class="col-label">(D)</span></label><input type="text" class="form-control form-control-sm" id="fb-3"></div>
+<div class="col-md-4"><label class="form-label">Range Tgl Kegiatan <span class="col-label">(E)</span></label><input type="text" class="form-control form-control-sm" id="fb-4"></div>
+<div class="col-md-4"><label class="form-label">Rekanan <span class="col-label">(F)</span></label><input type="text" class="form-control form-control-sm" id="fb-5"></div>
+<div class="col-md-4"><label class="form-label">Pelaksana <span class="col-label">(G)</span></label><input type="text" class="form-control form-control-sm" id="fb-6"></div>
+<div class="col-md-8"><label class="form-label">Uraian Kontrak <span class="col-label">(H)</span></label><input type="text" class="form-control form-control-sm" id="fb-7"></div>
+<div class="col-md-4"><label class="form-label">Kode Satker <span class="col-label">(I)</span></label><input type="text" class="form-control form-control-sm" id="fb-8"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="fb-bayar">
+<div class="wizard-card">
+<h6 class="section-title">Kalkulasi Pembayaran</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">Akun Belanja <span class="col-label">(R)</span></label><input type="number" class="form-control form-control-sm" id="fb-17"></div>
+<div class="col-md-8"><label class="form-label text-primary">Nilai Kontrak<span class="col-label">(J)</span></label><input type="text" class="form-control form-control-sm bg-calc format-rupiah text-primary fw-bold calc-fb target-rekap-fb" id="fb-9"></div>
+<div class="col-12 text-center alert-sisa fw-bold text-primary mb-3">Sisa Pagu Aman</div>
+<div class="col-md-3"><label class="form-label">Jml Hari <span class="col-label">(K)</span></label><input type="number" class="form-control form-control-sm calc-fb" id="fb-10"></div>
+<div class="col-md-3"><label class="form-label">Peserta <span class="col-label">(L)</span></label><input type="number" class="form-control form-control-sm calc-fb" id="fb-11"></div>
+<div class="col-md-6"><label class="form-label">Harga Satuan <span class="col-label">(M)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-fb" id="fb-12"></div>
+<div class="col-md-6"><label class="form-label">Total Harga <span class="col-label">(N)</span></label><input type="text" class="form-control form-control-sm bg-calc" id="fb-13" readonly></div>
+<div class="col-md-6"><label class="form-label">Biaya Lainnya <span class="col-label">(P)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="fb-15"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Jml Kamar <span class="col-label">(O)</span></label><input type="number" class="form-control form-control-sm" id="fb-14"></div>
+<div class="col-md-4 mt-3"><label class="form-label">PPN <span class="col-label">(S)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="fb-18"></div>
+<div class="col-md-4 mt-3"><label class="form-label">PPh 23 <span class="col-label">(T)</span></label><input type="text" class="form-control form-control-sm format-rupiah" id="fb-19"></div>
+<div class="col-md-12 mt-3"><label class="form-label">Keterangan <span class="col-label">(U)</span></label><input type="text" class="form-control form-control-sm" id="fb-20"></div>
+<div class="col-12 mt-3">
+<label class="form-label text-primary"><i class="bi bi-upload me-1"></i> Upload Scan - Maks 30MB</label>
+<input type="file" class="form-control form-control-sm file-scan border-primary" id="inp-scan-fb" accept=".pdf,image/*">
+<div class="mt-2">
+<label class="form-label small fw-bold text-success"><i class="bi bi-link-45deg me-1"></i> atau Paste Link Drive</label>
+<input type="text" id="inp-link-fb" class="form-control form-control-sm border-success form-link-drive" placeholder="Tempel link file Drive di sini...">
+</div>
+<small class="text-muted d-block mt-1" style="font-size: 10px;">*Pilih salah satu (Upload atau Link).
+Kosongkan jika ingin menyusul atau tidak ada perubahan saat Edit.</small>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="modal-footer border-0 bg-white d-flex justify-content-between p-3 border-top">
+<button type="button" class="btn btn-outline-secondary fw-bold" onclick="tutupDynamic('#modalFb')">Tutup</button>
+<div>
+<button type="button" class="btn btn-secondary btn-kembali-tab d-none fw-bold" onclick="prevTab('modalFb')"><i class="bi bi-arrow-left me-1"></i> Sebelumnya</button>
+<button type="button" class="btn btn-primary btn-lanjut-tab fw-bold px-4" onclick="nextTab('modalFb')">Lanjut <i class="bi bi-arrow-right ms-1"></i></button>
+<button class="btn btn-dark fw-bold px-4 d-none" id="btn-simpan-fb" onclick="simpanDynamic('Paket Fullboard')"><i class="bi bi-save me-2"></i> Simpan Data</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal fade" id="modalBp" tabindex="-1" data-bs-backdrop="static">
+<div class="modal-dialog modal-sm modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content border-primary shadow-lg">
+<div class="modal-header bg-primary text-white">
+<h5 class="modal-title fw-bold" id="titleFormBP"><i class="bi bi-person-badge me-2"></i>Belanja Pegawai</h5>
+<button type="button" class="btn-close btn-close-white" onclick="tutupDynamic('#modalBp')"></button>
+</div>
+<div class="modal-body text-center p-4 bg-white">
+<label class="form-label d-block text-start">No SPM <span class="col-label">(A)</span></label>
+<input type="text" class="form-control form-control-sm bg-readonly mb-4 text-center" id="bp-0" readonly>
+<label class="form-label d-block text-start">Nilai Rekap <span class="col-label">(B)</span></label>
+<input type="text" class="form-control form-control-lg format-rupiah text-primary fw-bold text-center border-primary calc-sisa target-rekap-bp" id="bp-1" placeholder="Rp 0">
+<div class="alert-sisa small fw-bold text-primary mt-2 mb-3">Sisa Pagu Aman</div>
+<label class="form-label d-block text-start small text-primary"><i class="bi bi-upload me-1"></i> Upload Bukti Scan</label>
+<input type="file" class="form-control form-control-sm file-scan border-primary" id="inp-scan-bp" accept=".pdf,image/*">
+<div class="mt-2 text-start">
+<label class="form-label small fw-bold text-success"><i class="bi bi-link-45deg me-1"></i> atau Paste Link Drive</label>
+<input type="text" id="inp-link-bp" class="form-control form-control-sm border-success form-link-drive" placeholder="Tempel link file Drive di sini...">
+</div>
+<small class="text-muted d-block mt-1 text-start" style="font-size: 10px;">*Pilih salah satu (Upload atau Link). Kosongkan jika menyusul.</small>
+</div>
+<div class="modal-footer p-2 bg-light border-top">
+<button class="btn btn-primary w-100 fw-bold" id="btn-simpan-bp" onclick="simpanDynamic('Belanja Pegawai')">Simpan Belanja Pegawai</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="modal fade modal-wizard" id="modalPd" tabindex="-1" data-bs-backdrop="static">
+<div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+<div class="modal-content shadow-lg">
+<div class="modal-header bg-success text-white">
+<h5 class="modal-title" id="titleFormPD"><i class="bi bi-airplane me-2"></i>Perjalanan Dinas Dalam Negeri</h5>
+<button type="button" class="btn-close btn-close-white" onclick="tutupPD()"></button>
+</div>
+<ul class="nav nav-tabs" id="pdTab" role="tablist">
+<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#t-dn-umum">1. Data Umum</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-dn-harian">2. Uang Harian</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-dn-hotel">3. Hotel</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-dn-berangkat">4. Berangkat</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-dn-pulang">5. Pulang</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-dn-akhir">6. DPR, Translok, & Total</button></li>
+</ul>
+<div class="modal-body p-0">
+<form id="formPd" class="p-4"><div class="tab-content">
+<div class="tab-pane fade show active" id="t-dn-umum">
+<div class="wizard-card">
+<h6 class="section-title">Data Umum & Penugasan</h6>
+<div class="row g-2">
+<div class="col-md-3"><label class="form-label">No SPM <span class="col-label">(A)</span></label><input type="text" class="form-control form-control-sm readonly-bg" id="dn-A" readonly></div>
+<div class="col-md-3"><label class="form-label">Kode Akun</label><input type="number" class="form-control form-control-sm" id="dn-KodeAkun"></div>
+<div class="col-md-3"><label class="form-label">No Surat Tugas <span class="col-label">(E)</span></label><input type="text" class="form-control form-control-sm" id="dn-E"></div>
+<div class="col-md-6"><label class="form-label">Uraian Penugasan <span class="col-label">(F)</span></label><input type="text" class="form-control form-control-sm" id="dn-F"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Nama Pelaksana <span class="col-label">(B)</span></label><input type="text" class="form-control form-control-sm" id="dn-B"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Pangkat/Golongan <span class="col-label">(C)</span></label><input type="text" class="form-control form-control-sm" id="dn-C"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Jabatan <span class="col-label">(D)</span></label><input type="text" class="form-control form-control-sm" id="dn-D"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Asal <span class="col-label">(G)</span></label><input type="text" class="form-control form-control-sm" id="dn-G"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Tujuan <span class="col-label">(H)</span></label><input type="text" class="form-control form-control-sm" id="dn-H"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Tanggal Mulai <span class="col-label">(I)</span></label><input type="date" class="form-control form-control-sm" id="dn-I"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Tanggal Selesai <span class="col-label">(J)</span></label><input type="date" class="form-control form-control-sm" id="dn-J"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="t-dn-harian">
+<div class="wizard-card">
+<h6 class="section-title">Kalkulasi Uang Harian</h6>
+<table class="table table-bordered table-sm align-middle"><thead class="table-light"><tr><th>Jenis Uang Harian</th><th>Tarif per Hari</th><th>Jumlah Hari</th><th>Diterima</th></tr></thead><tbody><tr><td><strong>UH Biasa</strong></td><td><label class="col-label">(K)</label> <input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc" id="dn-K"></td><td><label class="col-label">(L)</label> <input type="text" class="form-control form-control-sm calc-pddn format-angka bg-calc" id="dn-L"></td><td><label class="col-label">(M)</label> <input type="text" class="form-control form-control-sm readonly-bg" id="dn-M" readonly></td></tr><tr><td><strong>Representasi E-II</strong></td><td colspan="2" class="text-muted text-center">Isi nominal langsung</td><td><label class="col-label">(N)</label> <input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc" id="dn-N"></td></tr><tr><td><strong>UH Fullboard</strong></td><td><label class="col-label">(O)</label> <input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc" id="dn-O"></td><td><label class="col-label">(P)</label> <input type="text" class="form-control form-control-sm calc-pddn format-angka bg-calc" id="dn-P"></td><td><label class="col-label">(Q)</label> <input type="text" class="form-control form-control-sm readonly-bg" id="dn-Q" readonly></td></tr></tbody></table>
+</div>
+</div>
+<div class="tab-pane fade" id="t-dn-hotel">
+<div class="wizard-card">
+<h6 class="section-title">Detail Penginapan/Hotel</h6>
+<div class="row g-2">
+<div class="col-md-6"><label class="form-label">Nama Hotel <span class="col-label">(R)</span></label><input type="text" class="form-control form-control-sm" id="dn-R"></div>
+<div class="col-md-3"><label class="form-label">Lama Menginap <span class="col-label">(S)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-angka bg-calc" id="dn-S"></div>
+<div class="col-md-3"><label class="form-label">Tarif per Malam <span class="col-label">(T)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc" id="dn-T"></div>
+<div class="col-12 mt-3"><label class="form-label">Nilai Diterima <span class="col-label">(U)</span></label><input type="text" class="form-control form-control-sm readonly-bg" id="dn-U" readonly></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="t-dn-berangkat">
+<div class="wizard-card mb-3">
+<h6 class="section-title">Maskapai / Pesawat</h6>
+<div class="row g-2">
+<div class="col-md-3"><label class="form-label">Maskapai <span class="col-label">(AD)</span></label><input type="text" class="form-control form-control-sm" id="dn-AD"></div>
+<div class="col-md-2"><label class="form-label">No Tiket <span class="col-label">(AE)</span></label><input type="text" class="form-control form-control-sm" id="dn-AE"></div>
+<div class="col-md-2"><label class="form-label">Booking <span class="col-label">(AF)</span></label><input type="text" class="form-control form-control-sm" id="dn-AF"></div>
+<div class="col-md-2"><label class="form-label">Tanggal <span class="col-label">(AG)</span></label><input type="date" class="form-control form-control-sm" id="dn-AG"></div>
+<div class="col-md-3"><label class="form-label">Nilai Maskapai <span class="col-label">(AH)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AH"></div>
+</div>
+</div>
+<div class="wizard-card">
+<h6 class="section-title">Transportasi Darat & Laut</h6>
+<div class="row g-2">
+<div class="col-md-3"><label class="form-label">Nama KAI <span class="col-label">(V)</span></label><input type="text" class="form-control form-control-sm" id="dn-V"></div>
+<div class="col-md-3"><label class="form-label">Nilai KAI <span class="col-label">(W)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-W"></div>
+<div class="col-md-3"><label class="form-label">Nama Kapal <span class="col-label">(X)</span></label><input type="text" class="form-control form-control-sm" id="dn-X"></div>
+<div class="col-md-3"><label class="form-label">Nilai Kapal <span class="col-label">(Y)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-Y"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Nama Taksi/Agen <span class="col-label">(Z)</span></label><input type="text" class="form-control form-control-sm" id="dn-Z"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Nilai Taksi <span class="col-label">(AA)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AA"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Biaya BBM <span class="col-label">(AB)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AB"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Biaya Tol <span class="col-label">(AC)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AC"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="t-dn-pulang">
+<div class="wizard-card mb-3">
+<h6 class="section-title">Maskapai / Pesawat</h6>
+<div class="row g-2">
+<div class="col-md-3"><label class="form-label">Maskapai <span class="col-label">(AQ)</span></label><input type="text" class="form-control form-control-sm" id="dn-AQ"></div>
+<div class="col-md-2"><label class="form-label">No Tiket <span class="col-label">(AR)</span></label><input type="text" class="form-control form-control-sm" id="dn-AR"></div>
+<div class="col-md-2"><label class="form-label">Booking <span class="col-label">(AS)</span></label><input type="text" class="form-control form-control-sm" id="dn-AS"></div>
+<div class="col-md-2"><label class="form-label">Tanggal <span class="col-label">(AT)</span></label><input type="date" class="form-control form-control-sm" id="dn-AT"></div>
+<div class="col-md-3"><label class="form-label">Nilai Maskapai <span class="col-label">(AU)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AU"></div>
+</div>
+</div>
+<div class="wizard-card">
+<h6 class="section-title">Transportasi Darat & Laut</h6>
+<div class="row g-2">
+<div class="col-md-3"><label class="form-label">Nama KAI <span class="col-label">(AI)</span></label><input type="text" class="form-control form-control-sm" id="dn-AI"></div>
+<div class="col-md-3"><label class="form-label">Nilai KAI <span class="col-label">(AJ)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AJ"></div>
+<div class="col-md-3"><label class="form-label">Nama Kapal <span class="col-label">(AK)</span></label><input type="text" class="form-control form-control-sm" id="dn-AK"></div>
+<div class="col-md-3"><label class="form-label">Nilai Kapal <span class="col-label">(AL)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AL"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Nama Taksi/Agen <span class="col-label">(AM)</span></label><input type="text" class="form-control form-control-sm" id="dn-AM"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Nilai Taksi <span class="col-label">(AN)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AN"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Biaya BBM <span class="col-label">(AO)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AO"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Biaya Tol <span class="col-label">(AP)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AP"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="t-dn-akhir">
+<div class="wizard-card mb-3">
+<h6 class="section-title">Daftar Pengeluaran Riil (DPR) & Translok</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">DPR: Hotel <span class="col-label">(AV)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc" id="dn-AV"></div>
+<div class="col-md-4"><label class="form-label">DPR: Pesawat/KA <span class="col-label">(AW)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc" id="dn-AW"></div>
+<div class="col-md-4"><label class="form-label">DPR: Taksi/BBM <span class="col-label">(AX)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc" id="dn-AX"></div>
+<div class="col-md-8 mt-3"><label class="form-label">Ket. DPR <span class="col-label">(AY)</span></label><input type="text" class="form-control form-control-sm" id="dn-AY"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Transportasi Lokal <span class="col-label">(AZ)</span></label><input type="text" class="form-control form-control-sm calc-pddn format-rupiah bg-calc text-primary" id="dn-AZ"></div>
+<div class="col-12 mt-3">
+<label class="form-label text-primary"><i class="bi bi-upload me-1"></i> Upload Scan - Maks 30MB</label>
+<input type="file" class="form-control form-control-sm file-scan border-primary" id="inp-scan-dn" accept=".pdf,image/*">
+<div class="mt-2">
+<label class="form-label small fw-bold text-success"><i class="bi bi-link-45deg me-1"></i> atau Paste Link Drive</label>
+<input type="text" id="inp-link-dn" class="form-control form-control-sm border-success form-link-drive" placeholder="Tempel link file Drive di sini...">
+</div>
+<small class="text-muted d-block mt-1" style="font-size: 10px;">*Pilih salah satu (Upload atau Link).
+Kosongkan jika ingin menyusul atau tidak ada perubahan saat Edit.</small>
+</div>
+</div>
+</div>
+<div class="total-card text-center">
+<small class="fw-bold text-muted d-block mb-1">JUMLAH NILAI PERJALANAN DINAS <span class="col-label">(BA)</span></small>
+<h2 class="fw-bold text-success m-0" id="lbl-dn-BA">Rp 0</h2>
+<div id="alert-dn" class="small fw-bold mt-2 text-primary">Sisa Aman</div>
+</div>
+</div>
+</div></form></div>
+<div class="modal-footer border-0 bg-white d-flex justify-content-between p-3 border-top">
+<button type="button" class="btn btn-outline-secondary fw-bold" onclick="tutupPD()">Tutup</button>
+<div>
+<button type="button" class="btn btn-secondary btn-kembali-tab d-none fw-bold" onclick="prevTab('modalPd')"><i class="bi bi-arrow-left me-1"></i> Sebelumnya</button>
+<button type="button" class="btn btn-primary btn-lanjut-tab fw-bold px-4" onclick="nextTab('modalPd')">Lanjut <i class="bi bi-arrow-right ms-1"></i></button>
+<button class="btn btn-success fw-bold px-4 d-none" id="btnSimpanPD" onclick="prosesSimpanPD()"><i class="bi bi-cloud-arrow-up me-2"></i> Simpan Data</button>
+</div>
+</div>
+</div></div></div>
+
+<div class="modal fade modal-wizard" id="modalPdln" tabindex="-1" data-bs-backdrop="static"><div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"><div class="modal-content shadow-lg"><div class="modal-header bg-danger text-white"><h5 class="modal-title" id="titleFormPDLN"><i class="bi bi-globe-americas me-2"></i>Perjalanan Dinas Luar Negeri</h5><button type="button" class="btn-close btn-close-white" onclick="tutupPDLN()"></button></div>
+<ul class="nav nav-tabs" id="pdlnTab" role="tablist">
+<li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#t-ln-umum">1. Data Umum</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ln-berangkat">2. Berangkat</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ln-pulang">3. Pulang</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ln-uh">4. Uang Harian</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ln-ket">5. Biaya Lain</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ln-lengkapan">6. Kelengkapan</button></li>
+<li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#t-ln-bayar">7. Pembayaran</button></li>
+</ul>
+<div class="modal-body p-0">
+<form id="formPdln" class="p-4"><div class="tab-content">
+<div class="tab-pane fade show active" id="t-ln-umum">
+<div class="wizard-card">
+<h6 class="section-title">Data Umum & Penugasan</h6>
+<div class="row g-2">
+<div class="col-md-3"><label class="form-label">No SPM <span class="col-label">(A)</span></label><input type="text" class="form-control form-control-sm readonly-bg" id="ln-A" readonly></div>
+<div class="col-md-3"><label class="form-label">Kode Akun</label><input type="number" class="form-control form-control-sm" id="ln-KodeAkun"></div>
+<div class="col-md-3"><label class="form-label">Pelaksana ST <span class="col-label">(B)</span></label><input type="text" class="form-control form-control-sm" id="ln-B"></div>
+<div class="col-md-3"><label class="form-label">Jabatan <span class="col-label">(C)</span></label><input type="text" class="form-control form-control-sm" id="ln-C"></div>
+<div class="col-md-3"><label class="form-label">Pangkat/Gol <span class="col-label">(D)</span></label><input type="text" class="form-control form-control-sm" id="ln-D"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Nomor ST <span class="col-label">(E)</span></label><input type="text" class="form-control form-control-sm" id="ln-E"></div>
+<div class="col-md-6 mt-3"><label class="form-label">Uraian Tugas <span class="col-label">(F)</span></label><input type="text" class="form-control form-control-sm" id="ln-F"></div>
+<div class="col-md-3 mt-3"><label class="form-label">No. SPD <span class="col-label">(G)</span></label><input type="text" class="form-control form-control-sm" id="ln-G"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Tgl Mulai <span class="col-label">(H)</span></label><input type="date" class="form-control form-control-sm" id="ln-H"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Tgl Selesai <span class="col-label">(I)</span></label><input type="date" class="form-control form-control-sm" id="ln-I"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Kota Tujuan <span class="col-label">(J)</span></label><input type="text" class="form-control form-control-sm" id="ln-J"></div>
+<div class="col-md-3 mt-3"><label class="form-label">Negara Tujuan <span class="col-label">(K)</span></label><input type="text" class="form-control form-control-sm" id="ln-K"></div>
+<div class="col-md-2 mt-3"><label class="form-label">Jumlah Hari <span class="col-label">(L)</span></label><input type="text" class="form-control form-control-sm format-angka bg-calc calc-pdln" id="ln-L"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="t-ln-berangkat">
+<div class="wizard-card mb-3">
+<h6 class="section-title">Maskapai / Penerbangan</h6>
+<div class="row g-2">
+<div class="col-md-3"><label class="form-label">Berangkat (ID) <span class="col-label">(M)</span></label><input type="datetime-local" class="form-control form-control-sm" id="ln-M"></div>
+<div class="col-md-3"><label class="form-label">Tiba (Tujuan) <span class="col-label">(N)</span></label><input type="datetime-local" class="form-control form-control-sm" id="ln-N"></div>
+<div class="col-md-3"><label class="form-label">Penyedia Jasa <span class="col-label">(O)</span></label><input type="text" class="form-control form-control-sm" id="ln-O"></div>
+<div class="col-md-3"><label class="form-label">Maskapai <span class="col-label">(P)</span></label><input type="text" class="form-control form-control-sm" id="ln-P"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Nomor Tiket <span class="col-label">(Q)</span></label><input type="text" class="form-control form-control-sm" id="ln-Q"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Kode Booking <span class="col-label">(R)</span></label><input type="text" class="form-control form-control-sm" id="ln-R"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Nilai Tiket <span class="col-label">(S)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-S"></div>
+</div>
+</div>
+<div class="wizard-card">
+<h6 class="section-title">Transportasi Darat Lainnya</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">Taksi DN (Nama) <span class="col-label">(T)</span></label><input type="text" class="form-control form-control-sm" id="ln-T"></div>
+<div class="col-md-2"><label class="form-label">Nilai Taksi <span class="col-label">(U)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-U"></div>
+<div class="col-md-4"><label class="form-label">Lainnya (Nama) <span class="col-label">(V)</span></label><input type="text" class="form-control form-control-sm" id="ln-V"></div>
+<div class="col-md-2"><label class="form-label">Nilai Lain <span class="col-label">(W)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-W"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="t-ln-pulang">
+<div class="wizard-card mb-3">
+<h6 class="section-title">Maskapai / Penerbangan</h6>
+<div class="row g-2">
+<div class="col-md-3"><label class="form-label">Berangkat (Asal) <span class="col-label">(X)</span></label><input type="datetime-local" class="form-control form-control-sm" id="ln-X"></div>
+<div class="col-md-3"><label class="form-label">Tiba (ID) <span class="col-label">(Y)</span></label><input type="datetime-local" class="form-control form-control-sm" id="ln-Y"></div>
+<div class="col-md-3"><label class="form-label">Penyedia Jasa <span class="col-label">(Z)</span></label><input type="text" class="form-control form-control-sm" id="ln-Z"></div>
+<div class="col-md-3"><label class="form-label">Maskapai <span class="col-label">(AA)</span></label><input type="text" class="form-control form-control-sm" id="ln-AA"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Nomor Tiket <span class="col-label">(AB)</span></label><input type="text" class="form-control form-control-sm" id="ln-AB"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Kode Booking <span class="col-label">(AC)</span></label><input type="text" class="form-control form-control-sm" id="ln-AC"></div>
+<div class="col-md-4 mt-3"><label class="form-label">Nilai Tiket <span class="col-label">(AD)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AD"></div>
+</div>
+</div>
+<div class="wizard-card mb-3">
+<h6 class="section-title">Transportasi Darat Lainnya</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">Taksi DN (Nama) <span class="col-label">(AE)</span></label><input type="text" class="form-control form-control-sm" id="ln-AE"></div>
+<div class="col-md-2"><label class="form-label">Nilai Taksi <span class="col-label">(AF)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AF"></div>
+<div class="col-md-4"><label class="form-label">Lainnya (Nama) <span class="col-label">(AG)</span></label><input type="text" class="form-control form-control-sm" id="ln-AG"></div>
+<div class="col-md-2"><label class="form-label">Nilai Lain <span class="col-label">(AH)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AH"></div>
+</div>
+</div>
+<div class="alert alert-danger p-3 m-0 d-flex justify-content-between align-items-center rounded-3 border-danger shadow-sm"><span class="fw-bold">TOTAL TRANSPORTASI <span class="col-label text-white">(AI)</span></span><span id="lbl-ln-AI" class="fs-5 fw-bold">Rp 0</span></div>
+</div>
+<div class="tab-pane fade" id="t-ln-uh">
+<div class="wizard-card">
+<h6 class="section-title">Kalkulasi Uang Harian</h6>
+<div class="row g-2 mb-4">
+<div class="col-md-4"><label class="form-label">Nilai UH SBM <span class="col-label">(AJ)</span></label><input type="text" class="form-control form-control-sm format-rupiah bg-calc calc-pdln" id="ln-AJ"></div>
+<div class="col-md-4"><label class="form-label">Nilai Kurs <span class="col-label">(AK)</span></label><input type="text" class="form-control form-control-sm format-rupiah bg-calc calc-pdln" id="ln-AK"></div>
+<div class="col-md-4"><label class="form-label">Sumber Nilai Kurs <span class="col-label">(AL)</span></label><input type="text" class="form-control form-control-sm" id="ln-AL" placeholder="Tgl. Berapa?"></div>
+</div>
+<table class="table table-bordered table-sm align-middle small"><thead class="table-light"><tr><th>Komponen</th><th>Jml Hari</th><th>JUMLAH PENGELUARAN</th></tr></thead><tbody><tr><td>UH 100%</td><td><label class="col-label">(AM)</label> <input type="text" class="form-control form-control-sm format-angka bg-calc calc-pdln" id="ln-AM"></td><td><label class="col-label">(AN)</label> <input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AN"></td></tr><tr><td>UH 40%</td><td><label class="col-label">(AO)</label> <input type="text" class="form-control form-control-sm format-angka bg-calc calc-pdln" id="ln-AO"></td><td><label class="col-label">(AP)</label> <input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AP"></td></tr><tr><td>UH 30%</td><td><label class="col-label">(AQ)</label> <input type="text" class="form-control form-control-sm format-angka bg-calc calc-pdln" id="ln-AQ"></td><td><label class="col-label">(AR)</label> <input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AR"></td></tr></tbody></table>
+<div class="alert alert-danger p-3 mt-3 mb-0 d-flex justify-content-between align-items-center rounded-3 border-danger shadow-sm"><span class="fw-bold">JUMLAH TOTAL UH <span class="col-label text-white">(AS)</span></span><span id="lbl-ln-AS" class="fs-5 fw-bold">Rp 0</span></div>
+</div>
+</div>
+<div class="tab-pane fade" id="t-ln-ket">
+<div class="wizard-card mb-3">
+<h6 class="section-title">Biaya Tambahan</h6>
+<div class="row g-2">
+<div class="col-md-6"><label class="form-label">Asuransi <span class="col-label">(AT)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AT"></div>
+<div class="col-md-6"><label class="form-label">Visa <span class="col-label">(AU)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AU"></div>
+</div>
+</div>
+<div class="wizard-card mb-3">
+<h6 class="section-title">Lain-lain di Luar Negeri</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">Nilai <span class="col-label">(AV)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AV"></div>
+<div class="col-md-8"><label class="form-label">Keterangan <span class="col-label">(AW)</span></label><input type="text" class="form-control form-control-sm" id="ln-AW"></div>
+</div>
+</div>
+<div class="wizard-card">
+<h6 class="section-title">Lain-lain Dalam Negeri</h6>
+<div class="row g-2">
+<div class="col-md-4"><label class="form-label">Transportasi <span class="col-label">(AX)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AX"></div>
+<div class="col-md-4"><label class="form-label">Akomodasi <span class="col-label">(AY)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AY"></div>
+<div class="col-md-4"><label class="form-label">Uang Harian <span class="col-label">(AZ)</span></label><input type="text" class="form-control form-control-sm format-rupiah calc-pdln bg-calc" id="ln-AZ"></div>
+<div class="col-md-12 mt-3"><label class="form-label">Keterangan <span class="col-label">(BA)</span></label><input type="text" class="form-control form-control-sm" id="ln-BA"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="t-ln-lengkapan">
+<div class="wizard-card mb-3">
+<h6 class="section-title">Ceklis Kelengkapan</h6>
+<div class="row g-2">
+<div class="col-md-2"><label class="form-label">Itinerary <span class="col-label">(BC)</span></label><select class="form-select form-select-sm" id="ln-BC"><option value="Ada">Ada</option><option value="Tidak">Tidak</option></select></div>
+<div class="col-md-2"><label class="form-label">Paspor <span class="col-label">(BD)</span></label><select class="form-select form-select-sm" id="ln-BD"><option value="Ada">Ada</option><option value="Tidak">Tidak</option></select></div>
+<div class="col-md-2"><label class="form-label">Jenis <span class="col-label">(BE)</span></label><select class="form-select form-select-sm" id="ln-BE"><option value="Dinas">Dinas</option><option value="Pribadi">Pribadi</option></select></div>
+<div class="col-md-2"><label class="form-label">Undangan <span class="col-label">(BF)</span></label><select class="form-select form-select-sm" id="ln-BF"><option value="Ada">Ada</option><option value="Tidak">Tidak</option></select></div>
+<div class="col-md-2"><label class="form-label">Exit Permit <span class="col-label">(BG)</span></label><select class="form-select form-select-sm" id="ln-BG"><option value="Ada">Ada</option><option value="Tidak">Tidak</option></select></div>
+<div class="col-md-2"><label class="form-label">Laporan <span class="col-label">(BH)</span></label><select class="form-select form-select-sm" id="ln-BH"><option value="Ada">Ada</option><option value="Tidak">Tidak</option></select></div>
+</div>
+</div>
+<div class="wizard-card">
+<h6 class="section-title">Izin Setneg</h6>
+<div class="row g-2">
+<div class="col-md-3"><label class="form-label">No. Surat <span class="col-label">(BI)</span></label><input type="text" class="form-control form-control-sm" id="ln-BI"></div>
+<div class="col-md-3"><label class="form-label">Tanggal <span class="col-label">(BJ)</span></label><input type="date" class="form-control form-control-sm" id="ln-BJ"></div>
+<div class="col-md-2"><label class="form-label">Jml Hari <span class="col-label">(BK)</span></label><input type="text" class="form-control form-control-sm format-angka bg-calc" id="ln-BK"></div>
+<div class="col-md-4"><label class="form-label">Keterangan <span class="col-label">(BL)</span></label><input type="text" class="form-control form-control-sm" id="ln-BL"></div>
+</div>
+</div>
+</div>
+<div class="tab-pane fade" id="t-ln-bayar">
+<div class="wizard-card mb-4">
+<h6 class="section-title">Detail Pembayaran Akhir</h6>
+<div class="row g-2">
+<div class="col-md-3"><label class="form-label">No SPM <span class="col-label">(BM)</span></label><input type="text" class="form-control form-control-sm readonly-bg" id="ln-BM" readonly></div>
+<div class="col-md-3"><label class="form-label">No SP2D <span class="col-label">(BN)</span></label><input type="text" class="form-control form-control-sm" id="ln-BN"></div>
+<div class="col-md-3"><label class="form-label">Tgl SP2D <span class="col-label">(BO)</span></label><input type="date" class="form-control form-control-sm" id="ln-BO"></div>
+<div class="col-md-3"><label class="form-label">Nominal SP2D <span class="col-label">(BP)</span></label><input type="text" class="form-control form-control-sm format-rupiah bg-calc calc-pdln" id="ln-BP"></div>
+<div class="col-12 mt-3">
+<label class="form-label text-primary"><i class="bi bi-upload me-1"></i> Upload Scan - Maks 30MB</label>
+<input type="file" class="form-control form-control-sm file-scan border-primary" id="inp-scan-ln" accept=".pdf,image/*">
+<div class="mt-2">
+<label class="form-label small fw-bold text-success"><i class="bi bi-link-45deg me-1"></i> atau Paste Link Drive</label>
+<input type="text" id="inp-link-ln" class="form-control form-control-sm border-success form-link-drive" placeholder="Tempel link file Drive di sini...">
+</div>
+<small class="text-muted d-block mt-1" style="font-size: 10px;">*Pilih salah satu (Upload atau Link).
+Kosongkan jika ingin menyusul atau tidak ada perubahan saat Edit.</small>
+</div>
+</div>
+</div>
+<div class="total-card text-center shadow-sm">
+<div class="row align-items-center">
+<div class="col-md-4 border-end"><small class="text-muted fw-bold d-block mb-1">TOTAL BIAYA JALDIS <span class="col-label">(BB)</span></small><span id="lbl-ln-BB" class="fs-4 fw-bold text-dark">Rp 0</span></div>
+<div class="col-md-4 border-end"><small class="text-danger fw-bold d-block mb-1">PENGEMBALIAN <span class="col-label">(BQ)</span></small><input type="text" class="form-control form-control-lg format-rupiah calc-pdln bg-calc text-danger fw-bold mx-auto mt-1 text-center border-danger" id="ln-BQ" style="max-width:200px;"></div>
+<div class="col-md-4"><div class="p-3 bg-danger text-white rounded-3 shadow-sm"><small class="fw-bold d-block mb-1">REKAP AKHIR (BB+BQ)</small><h3 class="m-0 fw-bold" id="lbl-ln-GrandTotal">Rp 0</h3></div></div>
+</div>
+<div id="alert-ln" class="mt-4 fw-bold text-primary">Sisa Aman</div>
+</div>
+</div>
+</div></form></div>
+<div class="modal-footer border-0 bg-white d-flex justify-content-between p-3 border-top">
+<button type="button" class="btn btn-outline-secondary fw-bold" onclick="tutupPDLN()">Tutup</button>
+<div>
+<button type="button" class="btn btn-secondary btn-kembali-tab d-none fw-bold" onclick="prevTab('modalPdln')"><i class="bi bi-arrow-left me-1"></i> Sebelumnya</button>
+<button type="button" class="btn btn-primary btn-lanjut-tab fw-bold px-4" onclick="nextTab('modalPdln')">Lanjut <i class="bi bi-arrow-right ms-1"></i></button>
+<button class="btn-danger fw-bold px-4 d-none" id="btnSimpanPDLN" onclick="prosesSimpanPDLN()"><i class="bi bi-cloud-arrow-up me-2"></i> Simpan Data</button>
+</div>
+</div>
+</div></div></div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/dataTables.bootstrap5.min.js"></script>
+<script>
+let currentCaptcha = "";
+let captchaTimestamp = 0;
+
+// Fungsi Generate Captcha 4 Angka dengan Gambar (Canvas)
+function generateCaptcha() {
+  currentCaptcha = Math.floor(1000 + Math.random() * 9999).toString();
+  captchaTimestamp = new Date().getTime(); // Catat waktu saat captcha baru dibuat [cite: 346, 347]
+
+  const canvas = document.getElementById('display-captcha');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const width = canvas.width;
+  const height = canvas.height;
+
+  // Bersihkan background
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fillRect(0, 0, width, height);
+
+  // Buat efek titik-titik (noise/gangguan)
+  for (let i = 0; i < 150; i++) {
+    ctx.fillStyle = `rgba(100, 116, 139, ${Math.random() * 0.2})`;
+    ctx.fillRect(Math.random() * width, Math.random() * height, 2, 2);
+  }
+
+  // Tulis angka dengan posisi dan ukuran acak
+  const colors = ['#0f172a', '#1e293b', '#334155'];
+  for (let i = 0; i < currentCaptcha.length; i++) {
+    const char = currentCaptcha[i];
+    const fontSize = Math.floor(Math.random() * 10) + 32; 
+    const angle = (Math.random() - 0.5) * 0.5; 
+
+    ctx.font = `bold ${fontSize}px "Courier New", Courier, monospace`;
+    ctx.fillStyle = colors[Math.floor(Math.random() * colors.length)];
+
+    ctx.save();
+    const x = 15 + (i * 25);
+    const y = 35 + (Math.random() - 0.5) * 6; 
+
+    ctx.translate(x, y);
+    ctx.rotate(angle);
+    ctx.fillText(char, 0, 0);
+    ctx.restore();
+  }
+
+  // Tambahkan garis coretan pink acak
+  for (let i = 0; i < 2; i++) {
+    ctx.beginPath();
+    ctx.moveTo(Math.random() * 20, Math.random() * height);
+    ctx.lineTo(width - (Math.random() * 20), Math.random() * height);
+    ctx.strokeStyle = '#d946ef'; // Warna coretan pink
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  $('#input-captcha').val(''); // Kosongkan kolom setiap ganti gambar
+}
+
+// Fungsi Lihat/Sembunyikan Password
+function togglePasswordVisibility() {
+  const passwordField = document.getElementById('login-password');
+  const toggleIcon = document.getElementById('togglePassword');
+  
+  if (passwordField.type === 'password') {
+    passwordField.type = 'text';
+    toggleIcon.classList.replace('bi-eye', 'bi-eye-slash');
+  } else {
+    passwordField.type = 'password';
+    toggleIcon.classList.replace('bi-eye-slash', 'bi-eye');
+  }
+}
+
+let rawData = []; let dataUtama = []; let dataRekapUnit = []; let dataRekapBagian = []; let menuAktif = 'utama';
+let tablePlugin; let chartU, chartB; let dynamicUnits = [];
+const GROUP_GAJI_ASN = ["211 - GAJI INDUK", "212 - GAJI PPPK INDUK", "221 - GAJI LAINNYA", "222 - KEKURANGAN GAJI", "223 - GAJI SUSULAN", "226 - GAJI SUSULAN/TERUSAN PPPK", "228 - KEKURANGAN GAJI PPPK", "229 - GAJI LAINNYA PPPK", "251 - THR Gaji PNS/TNI/Polri", "252 - THR PPPK", "259 - THR Tunkin", "261 - GAJI KE-13 PNS/TNI/POLRI", "262 - Gaji Ke-13 PPPK", "269 - Tukin Ke-13", "271 - Tunjangan Kinerja Bulanan", "272 - Tunjangan Kinerja Susulan", "273 - Kekurangan Tunjangan Kinerja"];
+const GROUP_PPNPN = ["217 - Penghasilan PPNPN Induk", "227 - Penghasilan PPNPN Susulan", "254 - THR PPNPN", "264 - Penghasilan Ke-13 PPNPN"];
+let aktifSpm = ''; let aktifPagu = 0; let aktifKolomStatus = '';
+let currentTotalRekap = 0;
+let modeEdit = false; let editRowIndex = -1; let nilaiLamaEdit = 0;
+let urlScanLamaEdit = ""; // Variabel baru untuk menyimpan URL Scan lama saat Edit
+
+// VARIABEL GLOBAL BARU: Untuk Modal Folder Scan
+let aktifSpmFolder = '';
+let aktifUnitFolder = '';
+let aktifUrlFolder = '';
+let isScanModeCepat = false; // FLAG BARU: Sembunyikan Form
+
+const configKategori = {
+"Belanja Barang dan Jasa": { prefix: "bj", cols: 13, numCols: [7,8,9,10,11,12], modal: "#modalBj" },
+"Honor": { prefix: "hn", cols: 15, numCols: [10,11,12,13,14], modal: "#modalHn" },
+"Pemeliharaan, Persediaan, Modal": { prefix: "ppm", cols: 21, numCols: [9,11,12,13,14], modal: "#modalPpm" },
+"Paket Fullboard": { prefix: "fb", cols: 21, numCols: [9,10,11,12,13,14,15,18,19], modal: "#modalFb" },
+"Belanja Pegawai": { prefix: "bp", cols: 2, numCols: [1], modal: "#modalBp" }
+};
+
+// ==========================================
+// FUNGSI WIZARD TAB
+// ==========================================
+function setupWizard(modalId, btnSimpanId) {
+let modalEl = document.getElementById(modalId);
+if(!modalEl) return;
+let tabList = modalEl.querySelectorAll('.nav-tabs .nav-link');
+let btnLanjut = modalEl.querySelector('.btn-lanjut-tab');
+let btnKembali = modalEl.querySelector('.btn-kembali-tab');
+let btnSimpan = document.getElementById(btnSimpanId);
+
+modalEl.addEventListener('shown.bs.tab', function (e) {
+let activeTab = e.target;
+let activeIndex = Array.from(tabList).indexOf(activeTab);
+if (activeIndex === 0) { if(btnKembali) btnKembali.classList.add('d-none'); }
+else { if(btnKembali) btnKembali.classList.remove('d-none'); }
+
+if (activeIndex === tabList.length - 1) {
+if(btnLanjut) btnLanjut.classList.add('d-none');
+if(btnSimpan) btnSimpan.classList.remove('d-none');
+} else {
+if(btnLanjut) btnLanjut.classList.remove('d-none');
+if(btnSimpan) btnSimpan.classList.add('d-none');
+}
+});
+}
+
+function nextTab(modalId) {
+let modalEl = document.getElementById(modalId);
+let tabList = Array.from(modalEl.querySelectorAll('.nav-tabs .nav-link'));
+let activeIndex = tabList.findIndex(tab => tab.classList.contains('active'));
+if (activeIndex < tabList.length - 1) { let nextTab = new bootstrap.Tab(tabList[activeIndex + 1]); nextTab.show(); }
+}
+
+function prevTab(modalId) {
+let modalEl = document.getElementById(modalId);
+let tabList = Array.from(modalEl.querySelectorAll('.nav-tabs .nav-link'));
+let activeIndex = tabList.findIndex(tab => tab.classList.contains('active'));
+if (activeIndex > 0) { let prevTab = new bootstrap.Tab(tabList[activeIndex - 1]); prevTab.show(); }
+}
+
+function resetWizard(modalId) {
+let modalEl = document.getElementById(modalId);
+if(!modalEl) return;
+let firstTab = modalEl.querySelector('.nav-tabs .nav-link');
+if(firstTab) { let tab = new bootstrap.Tab(firstTab); tab.show(); }
+let btnLanjut = modalEl.querySelector('.btn-lanjut-tab');
+let btnKembali = modalEl.querySelector('.btn-kembali-tab');
+if(btnKembali) btnKembali.classList.add('d-none');
+if(btnLanjut) btnLanjut.classList.remove('d-none');
+let modalBody = modalEl.querySelector('.modal-body');
+if (modalBody) modalBody.scrollTop = 0;
+}
+
+// ==========================================
+// FUNGSI UPLOAD ATAU COPY LINK KE GOOGLE DRIVE
+// ==========================================
+function getBase64(file) {
+return new Promise((resolve, reject) => {
+const reader = new FileReader();
+reader.readAsDataURL(file);
+reader.onload = () => resolve(reader.result);
+reader.onerror = error => reject(error);
+});
+}
+
+async function handleUploadAndSave(fileInputId, linkInputId, spm, unitKerja, saveCallback) {
+let fileInput = document.getElementById(fileInputId);
+let linkInput = document.getElementById(linkInputId);
+
+let hasFile = (fileInput && fileInput.files.length > 0);
+let driveLink = (linkInput && linkInput.value.trim() !== "") ? linkInput.value.trim() : "";
+
+if (hasFile) {
+let file = fileInput.files[0];
+if (file.size > 30 * 1024 * 1024) {
+alert("Ukuran file terlalu besar! Maksimal 30MB.");
+return false;
+}
+let base64 = await getBase64(file);
+return new Promise((resolve) => {
+google.script.run.withSuccessHandler(res => {
+if (res.success) {
+saveCallback(res.url);
+resolve(true);
+} else {
+alert("Gagal upload file: " + res.message);
+resolve(false);
+}
+}).uploadFileToDrive(base64, file.name, file.type, spm, unitKerja);
+});
+}
+else if (driveLink !== "") {
+return new Promise((resolve) => {
+google.script.run.withSuccessHandler(res => {
+if (res.success) {
+saveCallback(res.url);
+resolve(true);
+} else {
+alert("Gagal menyalin link: " + res.message);
+resolve(false);
+}
+}).copyFileFromDriveLink(driveLink, spm, unitKerja);
+});
+}
+else {
+saveCallback(modeEdit ? urlScanLamaEdit : "");
+return true;
+}
+}
+
+// ==========================================
+// LOGIKA LOGIN, LOGOUT & SWITCH UNIT
+// ==========================================
+function prosesLogin() {
+  let username = $('#login-username').val().trim();
+  let password = $('#login-password').val().trim();
+  let userCaptcha = $('#input-captcha').val().trim();
+  
+  // LOGIKA BARU: Cek apakah captcha sudah lewat 3 menit (180.000 milidetik)
+  let waktuSekarang = new Date().getTime();
+  if (waktuSekarang - captchaTimestamp > 3 * 60 * 1000) {
+    alert("Kode CAPTCHA tidak valid.");
+    generateCaptcha(); // Refresh captcha otomatis
+    return;
+  }
+
+  if(!username || !password) {
+    alert("Mohon isi Username dan Password!");
+    return;
+  }
+
+  // VALIDASI CAPTCHA
+  if(userCaptcha !== currentCaptcha) {
+    alert("Kode Captcha salah! Silakan coba lagi.");
+    generateCaptcha(); // Refresh captcha jika salah
+    return;
+  }
+
+  $('#btn-login').html('<span class="spinner-border spinner-border-sm me-2"></span> Memeriksa...').prop('disabled', true);
+  
+  google.script.run.withSuccessHandler(function(res) {
+     if(res.success) {
+         // JIKA LOGIN BERHASIL: Cek apakah user punya banyak role/unit
+         if(res.profiles.length > 1) {
+             localStorage.setItem('allProfiles', JSON.stringify(res.profiles));
+             let opsiHtml = res.profiles.map((p, index) => `<option value="${index}">${p.role}</option>`).join('');
+             $('#login-role-select').html(opsiHtml);
+             $('#lbl-multi-nama').text(res.profiles[0].nama);
+             $('#login-form-area').hide();
+             $('#login-role-area').show();
+         } else {
+             // Jika hanya punya 1 role, langsung masuk
+             localStorage.setItem('allProfiles', JSON.stringify(res.profiles));
+             localStorage.setItem('userSession', JSON.stringify(res.profiles[0]));
+             masukDashboard(res.profiles[0]);
+         }
+     } else {
+         // JIKA GAGAL (Password salah)
+         alert(res.message);
+         $('#btn-login').html('<i class="bi bi-box-arrow-in-right me-1"></i> Masuk Dashboard').prop('disabled', false);
+         generateCaptcha(); // Ganti captcha baru karena gagal
+     }
+  }).validasiLoginUser(username, password);
+}
+
+function batalMultiLogin() {
+  $('#login-role-area').hide();
+  $('#login-form-area').show();
+  $('#btn-login').html('<i class="bi bi-box-arrow-in-right me-1"></i> Masuk Dashboard').prop('disabled', false);
+  localStorage.removeItem('allProfiles');
+}
+
+function lanjutLoginMulti() {
+  let selectedIndex = $('#login-role-select').val();
+  let profiles = JSON.parse(localStorage.getItem('allProfiles'));
+  let activeProfile = profiles[selectedIndex];
+  
+  localStorage.setItem('userSession', JSON.stringify(activeProfile));
+  masukDashboard(activeProfile);
+}
+
+function masukDashboard(userData) {
+  $('#login-page').hide();
+  $('#main-dashboard').css('display', 'flex');
+
+  // Update Tampilan Profil Navbar
+  $('#nav-user-name').text(userData.nama);
+  $('#drop-nama').text(userData.nama);
+  $('#drop-role').text(userData.role);
+  $('#drop-unit').text(userData.unitKerja);
+
+  // Setup Switcher Role di Profil (jika punya banyak profil)
+  let allProfiles = JSON.parse(localStorage.getItem('allProfiles'));
+  if (allProfiles && allProfiles.length > 1) {
+    let opsiHtml = allProfiles.map((p, index) => {
+      let isSelected = (p.unitKerja === userData.unitKerja && p.role === userData.role) ? 'selected' : '';
+      // Di sini kita ubah {p.unitKerja} menjadi {p.role} agar memunculkan Admin/User
+      return `<option value="${index}" ${isSelected}>${p.role}</option>`;
+    }).join('');
+    $('#switch-unit-select').html(opsiHtml);
+    $('#container-switch-unit, #divider-switch-unit').show();
+  } else {
+    $('#container-switch-unit, #divider-switch-unit').hide();
+  }
+
+  // Reset form login awal
+  $('#login-username').val('');
+  $('#login-password').val('');
+  $('#btn-login').html('<i class="bi bi-box-arrow-in-right me-1"></i> Masuk Dashboard').prop('disabled', false);
+  $('#login-role-area').hide();
+  $('#login-form-area').show();
+
+  ambilDataServer();
+}
+
+function gantiUnitKerja() {
+  let selectedIndex = $('#switch-unit-select').val();
+  let profiles = JSON.parse(localStorage.getItem('allProfiles'));
+  let newProfile = profiles[selectedIndex];
+  
+  localStorage.setItem('userSession', JSON.stringify(newProfile));
+  
+  // Update Tampilan Navbar
+  $('#drop-role').text(newProfile.role);
+  $('#drop-unit').text(newProfile.unitKerja);
+  
+  // Refresh Data dengan Unit Kerja yang baru
+  ambilDataServer();
+}
+
+function prosesLogout() {
+  if(confirm("Apakah Anda yakin ingin keluar?")) {
+    localStorage.removeItem('userSession');
+    localStorage.removeItem('allProfiles');
+    $('#main-dashboard').hide();
+    $('#login-page').css('display', 'flex');
+    $('#tbodySpm').empty();
+  }
+}
+
+// Helper: Ambil Nama PIC Otomatis dari Session
+function getPicNameSesi() {
+  let sesi = localStorage.getItem('userSession');
+  if (sesi) {
+    let data = JSON.parse(sesi);
+    return data.nama ? data.nama.trim() : "Sistem";
+  }
+  return "Sistem";
+}
+
+function cekPicKosong() {
+  let sesi = localStorage.getItem('userSession');
+  if (!sesi) {
+    alert("Sesi login Anda tidak valid. Harap relogin (logout lalu login kembali).");
+    return true;
+  }
+  return false;
+}
+
+$(document).ready(function() {
+  generateCaptcha();
+
+  // 1. Cek Sesi dengan Aman (Deteksi dan Hapus Sesi Rusak/Lama)
+  let sesi = localStorage.getItem('userSession');
+  if(sesi) {
+    try {
+      let userData = JSON.parse(sesi);
+      // Pastikan data sesi valid dan memiliki properti "nama"
+      if(typeof userData === 'object' && userData !== null && userData.nama) {
+        masukDashboard(userData); 
+      } else {
+        // Jika data format lama, hapus paksa agar bisa login ulang dengan bersih
+        localStorage.removeItem('userSession');
+        localStorage.removeItem('allProfiles');
+        $('#loading-overlay').hide();
+      }
+    } catch(e) {
+      // Jika terjadi error baca memori, bersihkan juga
+      localStorage.removeItem('userSession');
+      localStorage.removeItem('allProfiles');
+      $('#loading-overlay').hide();
+    }
+  } else {
+    $('#loading-overlay').hide();
+  }
+
+  setupWizard('modalBj', 'btn-simpan-bj');
+  setupWizard('modalHn', 'btn-simpan-hn');
+  setupWizard('modalPpm', 'btn-simpan-ppm');
+  setupWizard('modalFb', 'btn-simpan-fb');
+  setupWizard('modalPd', 'btnSimpanPD');
+  setupWizard('modalPdln', 'btnSimpanPDLN');
+  
+  $('#inp-kategori').on('change', function() {
+  let val = $(this).val();
+  $('#generic-input-area, #btn-simpan-rekap, .btn-lanjut').hide();
+  if(val === 'Perjalanan Dinas Dalam Negeri') { $('#btn-lanjut-pd').show(); }
+  else if(val === 'Perjalanan Dinas Luar Negeri') { $('#btn-lanjut-pdln').show(); }
+  else if(configKategori[val]) { let btnId = "#btn-lanjut-" + configKategori[val].prefix; $(btnId).show(); }
+  else { $('#generic-input-area').show(); $('#btn-simpan-rekap').show(); }
+  });
+  $('#inp-kategori').trigger('change');
+
+  $(document).on('input', '.format-rupiah', function() {
+  let val = $(this).val().replace(/[^0-9]/g, '');
+  if(val !== "") val = parseInt(val, 10).toLocaleString('id-ID');
+  $(this).val(val);
+  });
+  $(document).on('input', '.format-angka', function() {
+  let val = $(this).val().replace(/[^0-9]/g, ''); $(this).val(val);
+  });
+
+  $('#inp-nilai-display').on('input', function() {
+  let numVal = getValNum($(this).val());
+  if($(this).val() === '') {
+  let sisaAwal = aktifPagu - (currentTotalRekap - nilaiLamaEdit);
+  $('#lbl-sisa-pagu').text('Sisa Pagu: Rp ' + sisaAwal.toLocaleString('id-ID')).removeClass('text-danger').addClass('text-primary');
+  $('#btn-simpan-rekap').prop('disabled', false); return;
+  }
+  let sisaPagu = aktifPagu - (currentTotalRekap - nilaiLamaEdit) - numVal;
+  if(sisaPagu < 0) { $('#lbl-sisa-pagu').text('Melebihi Pagu! Minus: Rp ' + Math.abs(sisaPagu).toLocaleString('id-ID')).removeClass('text-primary').addClass('text-danger'); $('#btn-simpan-rekap').prop('disabled', true); }
+  else { $('#lbl-sisa-pagu').text('Sisa Pagu: Rp ' + sisaPagu.toLocaleString('id-ID')).removeClass('text-danger').addClass('text-primary'); $('#btn-simpan-rekap').prop('disabled', false); }
+  });
+
+  $('.calc-pddn').on('input', function() { kalkulasiOtomatisPD(); });
+  $('.calc-pdln').on('input', function() { kalkulasiOtomatisPDLN(); });
+  $('.calc-hn').on('input', function() { kalkulasiHonor(); });
+  $('.calc-ppm').on('input', function() { kalkulasiPPM(); });
+  $('.calc-fb').on('input', function() { kalkulasiFB(); });
+  $('.calc-sisa').on('input', function() { kalkulasiSisaPaguFormBaru(); });
+});
+
+function getValNum(val) { return Number(String(val).replace(/\./g, '').replace(/,/g, '.')) || 0; }
+function getVal(id) { return getValNum($('#' + id).val()); }
+function getUnitKerjaAktif() {
+let row = rawData.find(d => d['No. SPP/SPM'] === aktifSpm);
+return row ? (row['Unit Kerja'] || '-') : '-';
+}
+
+function kalkulasiHonor() {
+let vol = getVal('hn-10'); let rp = getVal('hn-11'); let pph = getVal('hn-13');
+let tot = vol * rp; let nett = tot - pph;
+$('#hn-12').val(tot.toLocaleString('id-ID'));
+$('#hn-14').val(nett.toLocaleString('id-ID'));
+kalkulasiSisaPaguFormBaru();
+}
+
+function kalkulasiPPM() { let nilaiK = getVal('ppm-9'); $('#ppm-14').val(nilaiK.toLocaleString('id-ID')); kalkulasiSisaPaguFormBaru(); }
+function kalkulasiFB() { let hari = getVal('fb-10'); let pes = getVal('fb-11'); let hrg = getVal('fb-12');
+let totHrg = hari * pes * hrg; $('#fb-13').val(totHrg.toLocaleString('id-ID')); kalkulasiSisaPaguFormBaru(); }
+
+function kalkulasiSisaPaguFormBaru() {
+let targetVal = 0; let btnSubmit = '';
+if($('#modalBj').hasClass('show')) { targetVal = getVal('bj-12'); btnSubmit = '#btn-simpan-bj'; }
+if($('#modalHn').hasClass('show')) { targetVal = getVal('hn-12'); btnSubmit = '#btn-simpan-hn'; }
+if($('#modalPpm').hasClass('show')) { targetVal = getVal('ppm-14'); btnSubmit = '#btn-simpan-ppm'; }
+if($('#modalFb').hasClass('show')) { targetVal = getVal('fb-9'); btnSubmit = '#btn-simpan-fb'; }
+if($('#modalBp').hasClass('show')) { targetVal = getVal('bp-1'); btnSubmit = '#btn-simpan-bp'; }
+
+let sisa = aktifPagu - (currentTotalRekap - nilaiLamaEdit) - targetVal;
+if(sisa < 0) {
+$('.alert-sisa').text('MELEBIHI PAGU! Minus: Rp ' + Math.abs(sisa).toLocaleString('id-ID')).addClass('text-danger').removeClass('text-primary');
+$(btnSubmit).addClass('disabled');
+} else {
+$('.alert-sisa').text('Sisa Pagu: Rp ' + sisa.toLocaleString('id-ID')).addClass('text-primary').removeClass('text-danger');
+$(btnSubmit).removeClass('disabled');
+}
+}
+
+function switchMenu(pageId, element) {
+$('.content-page').removeClass('active'); $('#' + pageId).addClass('active'); $('.nav-link').removeClass('active'); $(element).addClass('active');
+if(pageId === 'page-monitoring') {
+menuAktif = 'utama';
+$('#filter-unit, #filter-jenis, #filter-fisik, #filter-rekap, #filter-scan').parent().show();
+renderMainTable(dataUtama);
+}
+if(pageId === 'page-rekap-unit') {
+menuAktif = 'unit';
+$('#filter-unit, #filter-jenis, #filter-fisik, #filter-rekap, #filter-scan').parent().hide();
+updateRekapUnit(); updateDetailJenisUnit();
+}
+if(pageId === 'page-rekap-bagian') {
+menuAktif = 'bagian';
+$('#filter-unit, #filter-jenis, #filter-fisik, #filter-rekap, #filter-scan').parent().hide();
+updateRekapBagian();
+}
+}
+
+function ambilDataServer() { 
+  $('#loading-overlay').fadeIn();
+  
+  // 1. Mengambil informasi dari sesi pengguna yang sedang login
+  let sesi = localStorage.getItem('userSession');
+  let userUnitKerja = "ALL"; // Default: tampilkan semua
+  
+  if(sesi) {
+    let userData = JSON.parse(sesi);
+    
+    // --- 🌟 LOGIKA BARU UNTUK ADMIN ---
+    // Kita cek dulu apa role-nya.Pastikan semuanya huruf kecil agar mudah dicocokkan.
+    let role = userData.role ? userData.role.toString().toLowerCase() : "";
+    
+    // Jika role mengandung kata "admin", kita paksa hak akses unit kerjanya menjadi "ALL"
+    if (role.includes("admin")) {
+      userUnitKerja = "ALL";
+    } else {
+      // Jika bukan admin (misal: user biasa), baru kita set sesuai unit kerjanya
+      userUnitKerja = userData.unitKerja;
+    }
+  }
+
+  // 2. Mengirimkan parameter Unit Kerja ke server (Google Apps Script)
+  google.script.run.withSuccessHandler(data => { 
+    rawData = data; 
+    if (data.error) {
+       alert("Terjadi kesalahan: " + data.error);
+       $('#loading-overlay').fadeOut();
+       return;
+    }
+    
+    // 3. Memasukkan data ke dalam variabel penyimpan
+    dataUtama = [...rawData]; 
+    dataRekapUnit = [...rawData]; 
+    dataRekapBagian = [...rawData]; 
+    
+    // 4. Memperbarui tampilan
+    populateDropdowns(data); 
+    terapkanFilter(); 
+    $('#loading-overlay').fadeOut(); 
+    
+  }).getSpmData(userUnitKerja); // Memanggil fungsi di code.gs dengan parameter baru
+}
+
+function populateDropdowns(data) { const getUnique = (k) => [...new Set(data.map(d => d[k]))].filter(Boolean).sort(); let allUnits = getUnique('Unit Kerja');
+let otherUnits = allUnits.filter(u => u !== "SETDITJEN"); dynamicUnits = allUnits.includes("SETDITJEN") ? ["SETDITJEN", ...otherUnits] : otherUnits; let valUnit = $('#filter-unit').val();
+let valJenis = $('#filter-jenis').val(); $('#filter-unit').html('<option value="">Semua Unit</option>' + dynamicUnits.map(u => `<option value="${u}">${u}</option>`).join(''));
+$('#filter-jenis').html('<option value="">Semua Jenis</option>' + getUnique('Jenis SPP/SPM').map(j => `<option value="${j}">${j}</option>`).join('')); $('#filter-unit').val(valUnit); $('#filter-jenis').val(valJenis); $('#f-unit-rekap, #f-unit-detail').empty(); $('#f-unit-detail').append('<option value="">-- Semua Unit --</option>');
+dynamicUnits.forEach(v => { $('#f-unit-rekap').append(`<option value="${v}">${v}</option>`); $('#f-unit-detail').append(`<option value="${v}">${v}</option>`); }); }
+
+function terapkanFilter() {
+const f = { unit: $('#filter-unit').val(), jenis: $('#filter-jenis').val(), fisik: $('#filter-fisik').val(), rekap: $('#filter-rekap').val(), scan: $('#filter-scan').val(), jenisTanggal: $('#filter-tgl-jenis').val(), tglAwal: $('#filter-tgl-awal').val(), tglAkhir: $('#filter-tgl-akhir').val() };
+const res = rawData.filter(d => {
+let matchUnit = (!f.unit || d['Unit Kerja'] === f.unit); let matchJenis = (!f.jenis || d['Jenis SPP/SPM'] === f.jenis);
+let matchFisik = (f.fisik === "" || String(d['Fisik']) === f.fisik); let matchRekap = (f.rekap === "" || String(d['Rekap']) === f.rekap);
+let matchScan = (f.scan === "" || String(d['Scan']) === f.scan); let matchTanggal = true;
+if (f.tglAwal || f.tglAkhir) {
+let targetDate = d[f.jenisTanggal];
+if (!targetDate) { matchTanggal = false; } else { if (f.tglAwal && targetDate < f.tglAwal) matchTanggal = false;
+if (f.tglAkhir && targetDate > f.tglAkhir) matchTanggal = false; }
+}
+if (menuAktif === 'utama') { return matchUnit && matchJenis && matchFisik && matchRekap && matchScan && matchTanggal; }
+else { return matchTanggal; }
+});
+
+if (menuAktif === 'utama') { dataUtama = res; renderMainTable(dataUtama); }
+else if (menuAktif === 'unit') { dataRekapUnit = res; updateRekapUnit(); updateDetailJenisUnit(); }
+else if (menuAktif === 'bagian') { dataRekapBagian = res; updateRekapBagian(); }
+}
+
+function resetFilter() {
+if (menuAktif === 'utama') { $('#modalFilter select:not(#filter-tgl-jenis), #modalFilter input').val(''); $('#filter-tgl-jenis').val('Tanggal SP2D'); }
+else { $('#filter-tgl-awal, #filter-tgl-akhir').val(''); }
+terapkanFilter();
+}
+
+function renderMainTable(data) {
+if (tablePlugin) tablePlugin.destroy();
+const html = data.map(d => {
+let noSpm = d['No. SPP/SPM'] || '-'; let valSpm = Number(d['Jumlah Pengeluaran'] || 0);
+let unitKerjaSafe = (d['Unit Kerja'] || '-').replace(/'/g, "\\'");
+let badgeFisik = d['Fisik'] ?
+`<span class="btn-status-seragam bg-success text-white" style="cursor:default;" title="Otomatis Selesai (Rekap & Scan Lengkap)"><i class="bi bi-check"></i> Sudah</span>` :
+`<span class="btn-status-seragam bg-danger text-white" style="cursor:default;" title="Menunggu Rekap dan Scan Selesai"><i class="bi bi-x"></i> Belum</span>`;
+
+let badgeScan = d['Scan'] ?
+`<button class="btn-status-seragam bg-success text-white" onclick="bukaModalFolder('${noSpm}', '${unitKerjaSafe}')" title="Buka/Upload Dokumen"><i class="bi bi-folder-check me-1"></i> Sudah</button>` :
+`<button class="btn-status-seragam bg-danger text-white" onclick="bukaModalFolder('${noSpm}', '${unitKerjaSafe}')" title="Buka/Upload Dokumen"><i class="bi bi-folder-x me-1"></i> Belum</button>`;
+
+let statRekap = d['Rekap'];
+let warnaBtnRekap = '';
+let textBtnRekap = '';
+
+if (statRekap === "TIDAK SESUAI") {
+  warnaBtnRekap = 'bg-danger text-white border-danger';
+  textBtnRekap = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Tdk Sesuai';
+} else if (statRekap === true || statRekap === "TRUE") {
+  warnaBtnRekap = 'bg-success text-white border-success';
+  textBtnRekap = '<i class="bi bi-check-all me-1"></i> Selesai';
+} else {
+  warnaBtnRekap = 'btn-outline-primary bg-white text-primary';
+  textBtnRekap = 'Cek Rekap';
+}
+
+// BIKIN ID UNIK (Hapus karakter non-alphanumeric agar aman jadi ID HTML)
+let safeId = noSpm.replace(/[^a-zA-Z0-9]/g, '_'); 
+
+return `<tr id="tr-${safeId}">
+  <td class="fw-bold">${noSpm}</td>
+  <td>${d['Jenis SPP/SPM'] || '-'}</td>
+  <td>${d['Tanggal SP2D'] || '-'}</td>
+  <td class="fw-bold">${valSpm.toLocaleString('id-ID')}</td>
+  <td>${d['Uraian SPP/SPM'] || '-'}</td>
+  <td>${d['Unit Kerja'] || '-'}</td>
+  <td id="td-fisik-${safeId}">${badgeFisik}</td>
+  <td id="td-scan-${safeId}">${badgeScan}</td>
+  <td id="td-rekap-${safeId}"><button class="btn-status-seragam ${warnaBtnRekap}" onclick="bukaModalRekap('${noSpm}', ${valSpm})">${textBtnRekap}</button></td>
+</tr>`;
+}).join('');
+$('#tbodySpm').html(html);
+tablePlugin = $('#tableSpm').DataTable({ paging: true, pageLength: 25, scrollY: "calc(100vh - 310px)" });
+}
+
+function bukaModalStatus(noSpm, kolom, nilaiSaatIni) { aktifSpm = noSpm; aktifKolomStatus = kolom; $('#lbl-status-judul').text(kolom.toUpperCase()); $('#lbl-status-spm').text(noSpm); if(nilaiSaatIni === true) $('#opsiSudah').prop('checked', true);
+else $('#opsiBelum').prop('checked', true); $('#modalStatusFisikScan').modal('show'); }
+
+function simpanStatusFisikScan() { let statusBaru = $('input[name="opsiStatus"]:checked').val() === 'true'; $('#btn-simpan-status').html('<span class="spinner-border spinner-border-sm"></span>').prop('disabled', true);
+google.script.run.withSuccessHandler(res => { $('#btn-simpan-status').html('Simpan Perubahan').prop('disabled', false); if(res.success) { let idx = rawData.findIndex(x => x['No. SPP/SPM'] === aktifSpm); if(idx !== -1) rawData[idx][aktifKolomStatus] = statusBaru; $('#modalStatusFisikScan').modal('hide'); terapkanFilter(); } else { alert('Gagal menyimpan: ' + res.message); } }).updateStatusTunggal(aktifSpm, aktifKolomStatus, statusBaru);
+}
+
+function bukaModalRekap(noSpm, paguSpm) { aktifSpm = noSpm; aktifPagu = paguSpm; $('#lbl-no-spm').text(noSpm); $('#lbl-pagu-spm').text('Rp ' + paguSpm.toLocaleString('id-ID')); $('#modalRekap').modal('show'); loadDaftarRekap(); }
+
+function loadDaftarRekap() {
+  $('#loading-rekap').show(); $('#tbody-list-rekap').empty();
+  google.script.run.withSuccessHandler(res => {
+    $('#loading-rekap').hide();
+    if(res.success) {
+      currentTotalRekap = res.total; $('#lbl-total-rekap').text('Rp ' + currentTotalRekap.toLocaleString('id-ID'));
+      sinkronisasiBarisLokal(aktifSpm, currentTotalRekap);
+      if(res.data.length === 0) {
+        $('#tbody-list-rekap').html('<tr><td colspan="5" class="text-center text-muted">Belum ada rekap</td></tr>');
+      } else {
+        // Fungsi Format PIC untuk merapikan nama history
+        let formatPic = (picString) => {
+          if (!picString || picString === "-") return "-";
+          let picArray = picString.split(";").map(p => p.trim());
+          let lastPic = picArray[picArray.length - 1];
+          if (picArray.length > 1) {
+            return `<span class="fw-bold text-secondary" style="text-decoration: underline dotted; cursor: help;" title="Histori Edit: ${picString}">${lastPic}</span>`;
+          }
+          return `<span class="fw-bold text-secondary">${lastPic}</span>`;
+        };
+
+        let h = res.data.map(r => {
+          let picRekapHtml = formatPic(r.pic);
+          let btnScan = r.urlScan ? `<a href="${r.urlScan}" target="_blank" class="btn btn-sm btn-info py-0 me-1 text-white" title="Lihat Bukti Scan"><i class="bi bi-file-earmark-pdf"></i></a>` : '';
+          return `<tr>
+                    <td>${r.kategori}</td>
+                    <td>${picRekapHtml}</td>
+                    <td class="text-end fw-bold">${r.nilai.toLocaleString('id-ID')}</td>
+                    <td class="text-center">
+                      ${btnScan}
+                      <button class="btn btn-sm btn-warning py-0 me-1" onclick="editRekap('${r.kategori}', ${r.rowIndex}, ${r.nilai}, '${r.urlScan}')"><i class="bi bi-pencil"></i></button>
+                      <button class="btn btn-sm btn-danger py-0" onclick="hapusRekap('${r.kategori}', ${r.rowIndex})"><i class="bi bi-trash"></i></button>
+                    </td>
+                  </tr>`;
+        }).join('');
+        $('#tbody-list-rekap').html(h);
+      }
+    }
+  }).getDaftarRekap(aktifSpm);
+}
+
+function bukaFormTambah() {
+if (cekPicKosong()) return;
+isScanModeCepat = false;
+toggleModeScanCepat(false);
+modeEdit = false; editRowIndex = -1; nilaiLamaEdit = 0; urlScanLamaEdit = "";
+$('#inp-nilai-display').val('');
+$('.file-scan, .form-link-drive').val('');
+$('#titleFormBiasa').html('Pilih Kategori Rekap'); $('#inp-kategori').prop('disabled', false);
+let sisa = aktifPagu - currentTotalRekap;
+$('#lbl-sisa-pagu').text('Sisa Pagu: Rp ' + sisa.toLocaleString('id-ID')).removeClass('text-danger').addClass('text-primary');
+$('#modalFormRekap').modal('show');
+}
+
+function editRekap(kategori, rowIndex, nilai, urlScan = "", fromScanCepat = false) {
+isScanModeCepat = fromScanCepat;
+if (!isScanModeCepat && cekPicKosong()) return;
+modeEdit = true; editRowIndex = rowIndex; nilaiLamaEdit = nilai; urlScanLamaEdit = urlScan;
+$('.file-scan, .form-link-drive').val('');
+$('#loading-rekap').show();
+
+google.script.run.withSuccessHandler(res => {
+$('#loading-rekap').hide();
+if(!res.success) { alert("Gagal memuat data: " + res.message); return; }
+const isiFormDenganAman = (elId, val, isNum) => {
+let el = $('#' + elId);
+if (val === undefined || val === null || val === "") return;
+
+if (isNum) {
+let parts = val.toString().split('.');
+parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+el.val(parts.join(','));
+} else {
+let tipe = el.attr('type');
+if (tipe === 'date' && typeof val === 'string' && val.length >= 10) {
+el.val(val.substring(0, 10));
+}
+else if (tipe === 'datetime-local' && typeof val === 'string' && val.length >= 16) {
+el.val(val.substring(0, 16));
+}
+else {
+el.val(val);
+}
+}
+};
+if(kategori === "Perjalanan Dinas Dalam Negeri") {
+$('#modalRekap').modal('hide'); $('#formPd')[0].reset();
+$('#titleFormPD').html('<i class="bi bi-pencil-square me-2"></i>Edit Perjalanan Dinas (DN)');
+$('#btnSimpanPD').html('<i class="bi bi-pencil-square me-2"></i>Update Data').addClass('d-none');
+const headersBA = ["A","KodeAkun","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ","BA"];
+const numCols = ["K","L","N","O","P","S","T","W","Y","AA","AB","AC","AH","AJ","AL","AN","AO","AP","AU","AV","AW","AX","AZ"];
+headersBA.forEach((colId, index) => {
+isiFormDenganAman('dn-' + colId, res.data[index], numCols.includes(colId));
+});
+kalkulasiOtomatisPD();
+resetWizard('modalPd'); $('#modalPd').modal('show');
+
+} else if(kategori === "Perjalanan Dinas Luar Negeri") {
+$('#modalRekap').modal('hide'); $('#formPdln')[0].reset();
+$('#titleFormPDLN').html('<i class="bi bi-pencil-square me-2"></i>Edit Perjalanan Dinas (LN)');
+$('#btnSimpanPDLN').html('<i class="bi bi-pencil-square me-2"></i>Update Data').addClass('d-none');
+const headersBQ = ["A","KodeAkun","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ","BA","BB","BC","BD","BE","BF","BG","BH","BI","BJ","BK","BL","BM","BN","BO","BP","BQ"];
+const formatRupiahCols = ["S","U","W","AD","AF","AH","AJ","AK","AN","AP","AR","AT","AU","AV","AX","AY","AZ","BP","BQ"];
+headersBQ.forEach((colId, index) => {
+isiFormDenganAman('ln-' + colId, res.data[index], formatRupiahCols.includes(colId));
+});
+kalkulasiOtomatisPDLN();
+resetWizard('modalPdln'); $('#modalPdln').modal('show');
+
+} else if(configKategori[kategori]) {
+$('#modalRekap').modal('hide');
+let conf = configKategori[kategori];
+$(conf.modal + ' input').val('');
+$('#btn-simpan-' + conf.prefix).html('<i class="bi bi-pencil-square me-2"></i>Update Data');
+if (conf.prefix === 'bp') {
+$('#btn-simpan-' + conf.prefix).removeClass('d-none');
+} else {
+$('#btn-simpan-' + conf.prefix).addClass('d-none');
+}
+for(let i=0; i<conf.cols; i++) {
+isiFormDenganAman(conf.prefix + '-' + i, res.data[i], conf.numCols.includes(i));
+}
+kalkulasiSisaPaguFormBaru();
+resetWizard(conf.modal.replace('#','')); $(conf.modal).modal('show');
+
+} else {
+$('#modalRekap').modal('hide'); $('#titleFormBiasa').html('<i class="bi bi-pencil-square me-2"></i>Edit Kategori Rekap');
+$('#inp-kategori').val(kategori).prop('disabled', true);
+$('#inp-nilai-display').val(nilai.toLocaleString('id-ID'));
+$('#btn-simpan-rekap').text('Update Rekap').show();
+let sisa = aktifPagu - (currentTotalRekap - nilaiLamaEdit) - nilai;
+$('#lbl-sisa-pagu').text('Sisa Pagu: Rp ' + sisa.toLocaleString('id-ID')).removeClass('text-danger').addClass('text-primary');
+$('#inp-kategori').trigger('change'); $('#modalFormRekap').modal('show');
+}
+setTimeout(() => { toggleModeScanCepat(isScanModeCepat); }, 200);
+}).getDataRekapBaris(kategori, rowIndex);
+}
+
+function bukaModalDynamic(kategori) { isScanModeCepat = false; toggleModeScanCepat(false);
+modeEdit = false; editRowIndex = -1; nilaiLamaEdit = 0; urlScanLamaEdit = "";
+$('#modalFormRekap').modal('hide');
+let conf = configKategori[kategori];
+$(conf.modal + ' input:not(.bg-readonly)').val(''); $('#' + conf.prefix + '-0').val(aktifSpm);
+$('#btn-simpan-' + conf.prefix).html('<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data');
+if (conf.prefix === 'bp') { $('#btn-simpan-' + conf.prefix).removeClass('d-none'); }
+else { $('#btn-simpan-' + conf.prefix).addClass('d-none'); }
+$('.file-scan, .form-link-drive').val('');
+kalkulasiSisaPaguFormBaru();
+resetWizard(conf.modal.replace('#',''));
+$(conf.modal).modal('show');
+}
+
+function tutupDynamic(modalId) {
+$(modalId).modal('hide');
+if (isScanModeCepat) {
+$('#modalFolderScan').modal('show'); 
+} else {
+$('#modalRekap').modal('show'); 
+}
+}
+
+async function simpanDynamic(kategori) {
+let picName = getPicNameSesi();
+let unitKerja = getUnitKerjaAktif();
+let conf = configKategori[kategori];
+
+if ($('#btn-simpan-' + conf.prefix).hasClass('disabled')) return;
+let dataKirim = [];
+for(let i=0; i<conf.cols; i++) {
+let valId = conf.prefix + '-' + i;
+let isNum = conf.numCols.includes(i);
+let val = isNum ? getVal(valId) : $('#' + valId).val();
+dataKirim.push(val);
+}
+
+$('#btn-simpan-' + conf.prefix).html('<span class="spinner-border spinner-border-sm"></span> Mengunggah...').addClass('disabled');
+
+let success = await handleUploadAndSave('inp-scan-' + conf.prefix, 'inp-link-' + conf.prefix, aktifSpm, unitKerja, function(scanUrl) {
+$('#btn-simpan-' + conf.prefix).html('<span class="spinner-border spinner-border-sm"></span> Menyimpan...').addClass('disabled');
+let rowKirim = modeEdit ? editRowIndex : null;
+google.script.run.withSuccessHandler(res => {
+$('#btn-simpan-' + conf.prefix).html(modeEdit ? '<i class="bi bi-pencil-square me-2"></i>Update Data' : '<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').removeClass('disabled');
+if(res.success) { $(conf.modal).modal('hide'); loadDaftarRekap(); } else { alert(res.message); }
+}).simpanAtauUpdateRekapDynamic(aktifSpm, kategori, dataKirim, aktifPagu, picName, unitKerja, scanUrl, rowKirim, isScanModeCepat);
+});
+
+if(!success) { $('#btn-simpan-' + conf.prefix).html(modeEdit ? '<i class="bi bi-pencil-square me-2"></i>Update Data' : '<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').removeClass('disabled'); }
+}
+
+async function prosesSimpanRekap() {
+let picName = getPicNameSesi();
+let unitKerja = getUnitKerjaAktif();
+let kategori = $('#inp-kategori').val(); let nilai = getVal('inp-nilai-display');
+
+if(!nilai || nilai <= 0) { alert('Isi nilai rekap dengan benar!'); return; }
+$('#btn-simpan-rekap').html('<span class="spinner-border spinner-border-sm"></span> Mengunggah...').prop('disabled', true);
+
+let success = await handleUploadAndSave('inp-scan-biasa', 'inp-link-biasa', aktifSpm, unitKerja, function(scanUrl) {
+$('#btn-simpan-rekap').text('Menyimpan Data...');
+let rowKirim = modeEdit ? editRowIndex : null;
+google.script.run.withSuccessHandler(res => {
+$('#btn-simpan-rekap').text(modeEdit ? 'Update Rekap' : 'Simpan Rekap').prop('disabled', false);
+if(res.success) { $('#modalFormRekap').modal('hide'); loadDaftarRekap(); } else { alert(res.message); }
+}).simpanAtauUpdateRekap(aktifSpm, kategori, nilai, aktifPagu, picName, unitKerja, scanUrl, rowKirim, isScanModeCepat);
+});
+
+if(!success) { $('#btn-simpan-rekap').text(modeEdit ? 'Update Rekap' : 'Simpan Rekap').prop('disabled', false); }
+}
+
+function hapusRekap(kategori, rowIndex) { if(confirm('Yakin menghapus rekap ini?')) { $('#loading-rekap').show();
+google.script.run.withSuccessHandler(res => { if(res.success) { loadDaftarRekap(); } }).hapusDataRekap(kategori, rowIndex, aktifSpm); } }
+
+function bukaModalPD() {
+isScanModeCepat = false;
+toggleModeScanCepat(false);
+modeEdit = false; editRowIndex = -1; nilaiLamaEdit = 0; urlScanLamaEdit = "";
+$('#modalFormRekap').modal('hide'); $('#formPd')[0].reset();
+$('#titleFormPD').html('<i class="bi bi-airplane me-2"></i>Perjalanan Dinas Dalam Negeri');
+$('#btnSimpanPD').html('<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').addClass('d-none');
+$('#dn-A').val(aktifSpm); $('.file-scan, .form-link-drive').val('');
+kalkulasiOtomatisPD();
+resetWizard('modalPd');
+$('#modalPd').modal('show');
+}
+
+function tutupPD() {
+$('#modalPd').modal('hide');
+if (isScanModeCepat) {
+$('#modalFolderScan').modal('show');
+} else {
+$('#modalRekap').modal('show');
+}
+}
+
+function kalkulasiOtomatisPD() {
+let valM = getVal('dn-K') * getVal('dn-L'); $('#dn-M').val(valM.toLocaleString('id-ID'));
+let valQ = getVal('dn-O') * getVal('dn-P'); $('#dn-Q').val(valQ.toLocaleString('id-ID'));
+let valN = getVal('dn-N'); let valU = getVal('dn-S') * getVal('dn-T'); $('#dn-U').val(valU.toLocaleString('id-ID'));
+let valBerangkat = getVal('dn-W') + getVal('dn-Y') + getVal('dn-AA') + getVal('dn-AB') + getVal('dn-AC') + getVal('dn-AH');
+let valPulang = getVal('dn-AJ') + getVal('dn-AL') + getVal('dn-AN') + getVal('dn-AO') + getVal('dn-AP') + getVal('dn-AU');
+let valDPR = getVal('dn-AV') + getVal('dn-AW') + getVal('dn-AX');
+let valTranslok = getVal('dn-AZ');
+let grandTotal = valM + valN + valQ + valU + valBerangkat + valPulang + valDPR + valTranslok;
+$('#lbl-dn-BA').text('Rp ' + grandTotal.toLocaleString('id-ID'));
+
+let sisa = aktifPagu - (currentTotalRekap - nilaiLamaEdit) - grandTotal;
+if(sisa < 0) { $('#alert-dn').text('MELEBIHI PAGU! Minus: Rp ' + Math.abs(sisa).toLocaleString('id-ID')).addClass('text-danger').removeClass('text-primary'); $('#btnSimpanPD').addClass('disabled');
+} else { $('#alert-dn').text('Sisa Pagu Setelah PD ini: Rp ' + sisa.toLocaleString('id-ID')).addClass('text-primary').removeClass('text-danger'); $('#btnSimpanPD').removeClass('disabled'); } }
+
+async function prosesSimpanPD() {
+let picName = getPicNameSesi();
+let unitKerja = getUnitKerjaAktif();
+if ($('#btnSimpanPD').hasClass('disabled')) return;
+
+const headersBA = ["A","KodeAkun","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ","BA"];
+let dataKirim = [];
+
+headersBA.forEach((colId) => {
+if (colId === 'A') { dataKirim.push(aktifSpm); } 
+else if (colId === 'KodeAkun') { dataKirim.push($('#dn-KodeAkun').val()); }
+else if (['M', 'Q', 'U', 'BA'].includes(colId)) {
+if(colId === 'M') dataKirim.push(getVal('dn-K') * getVal('dn-L'));
+if(colId === 'Q') dataKirim.push(getVal('dn-O') * getVal('dn-P'));
+if(colId === 'U') dataKirim.push(getVal('dn-S') * getVal('dn-T'));
+if(colId === 'BA') dataKirim.push((getVal('dn-K') * getVal('dn-L')) + getVal('dn-N') + (getVal('dn-O') * getVal('dn-P')) + (getVal('dn-S') * getVal('dn-T')) + getVal('dn-W') + getVal('dn-Y') + getVal('dn-AA') + getVal('dn-AB') + getVal('dn-AC') + getVal('dn-AH') + getVal('dn-AJ') + getVal('dn-AL') + getVal('dn-AN') + getVal('dn-AO') + getVal('dn-AP') + getVal('dn-AU') + getVal('dn-AV') + getVal('dn-AW') + getVal('dn-AX') + getVal('dn-AZ'));
+} else {
+let val = $('#dn-' + colId).val() || "";
+const numCols = ["K","L","N","O","P","S","T","W","Y","AA","AB","AC","AH","AJ","AL","AN","AO","AP","AU","AV","AW","AX","AZ"];
+if (numCols.includes(colId) && val !== "") val = getVal('dn-' + colId);
+dataKirim.push(val);
+}
+});
+
+$('#btnSimpanPD').html('<span class="spinner-border spinner-border-sm"></span> Mengunggah...').addClass('disabled');
+
+let success = await handleUploadAndSave('inp-scan-dn', 'inp-link-dn', aktifSpm, unitKerja, function(scanUrl) {
+$('#btnSimpanPD').html('<span class="spinner-border spinner-border-sm"></span> Menyimpan Data...');
+let rowKirim = modeEdit ? editRowIndex : null;
+google.script.run.withSuccessHandler(res => {
+$('#btnSimpanPD').html(modeEdit ? '<i class="bi bi-pencil-square me-2"></i>Update Data' : '<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').removeClass('disabled');
+if(res.success) { $('#modalPd').modal('hide'); loadDaftarRekap(); } else { alert(res.message); }
+}).simpanAtauUpdateRekapPD(aktifSpm, dataKirim, aktifPagu, picName, unitKerja, scanUrl, rowKirim, isScanModeCepat);
+});
+
+if(!success) { $('#btnSimpanPD').html(modeEdit ? '<i class="bi bi-pencil-square me-2"></i>Update Data' : '<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').removeClass('disabled'); }
+}
+
+function bukaModalPDLN() {
+isScanModeCepat = false;
+toggleModeScanCepat(false);
+modeEdit = false; editRowIndex = -1; nilaiLamaEdit = 0; urlScanLamaEdit = "";
+$('#modalFormRekap').modal('hide'); $('#formPdln')[0].reset();
+$('#titleFormPDLN').html('<i class="bi bi-globe-americas me-2"></i>Perjalanan Dinas Luar Negeri');
+$('#btnSimpanPDLN').html('<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').addClass('d-none');
+$('#ln-A').val(aktifSpm); $('#ln-BM').val(aktifSpm); $('.file-scan, .form-link-drive').val('');
+kalkulasiOtomatisPDLN();
+resetWizard('modalPdln');
+$('#modalPdln').modal('show');
+}
+
+function tutupPDLN() {
+$('#modalPdln').modal('hide');
+if (isScanModeCepat) {
+$('#modalFolderScan').modal('show');
+} else {
+$('#modalRekap').modal('show');
+}
+}
+
+function kalkulasiOtomatisPDLN() { let valAI = getVal('ln-S') + getVal('ln-U') + getVal('ln-W') + getVal('ln-AD') + getVal('ln-AF') + getVal('ln-AH');
+$('#lbl-ln-AI').text('Rp ' + valAI.toLocaleString('id-ID')); let valAS = getVal('ln-AN') + getVal('ln-AP') + getVal('ln-AR'); $('#lbl-ln-AS').text('Rp ' + valAS.toLocaleString('id-ID'));
+let valBB = valAI + valAS + getVal('ln-AT') + getVal('ln-AU') + getVal('ln-AV') + getVal('ln-AX') + getVal('ln-AY') + getVal('ln-AZ');
+$('#lbl-ln-BB').text('Rp ' + valBB.toLocaleString('id-ID')); let grandTotal = valBB + getVal('ln-BQ'); $('#lbl-ln-GrandTotal').text('Rp ' + grandTotal.toLocaleString('id-ID'));
+
+let sisa = aktifPagu - (currentTotalRekap - nilaiLamaEdit) - grandTotal;
+if(sisa < 0) { $('#alert-ln').text('MELEBIHI PAGU! Minus: Rp ' + Math.abs(sisa).toLocaleString('id-ID')).addClass('text-danger').removeClass('text-primary'); $('#btnSimpanPDLN').addClass('disabled');
+} else { $('#alert-ln').text('Sisa Pagu Setelah PDLN ini: Rp ' + sisa.toLocaleString('id-ID')).addClass('text-primary').removeClass('text-danger'); $('#btnSimpanPDLN').removeClass('disabled'); } }
+
+async function prosesSimpanPDLN() {
+let picName = getPicNameSesi();
+let unitKerja = getUnitKerjaAktif();
+if ($('#btnSimpanPDLN').hasClass('disabled')) return;
+
+const headersBQ = ["A","KodeAkun","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q","R","S","T","U","V","W","X","Y","Z","AA","AB","AC","AD","AE","AF","AG","AH","AI","AJ","AK","AL","AM","AN","AO","AP","AQ","AR","AS","AT","AU","AV","AW","AX","AY","AZ","BA","BB","BC","BD","BE","BF","BG","BH","BI","BJ","BK","BL","BM","BN","BO","BP","BQ"];
+let dataKirim = [];
+
+headersBQ.forEach((colId) => {
+if (colId === 'A' || colId === 'BM') { dataKirim.push(aktifSpm); } 
+else if (colId === 'KodeAkun') { dataKirim.push($('#ln-KodeAkun').val()); }
+else if (['AI', 'AS', 'BB'].includes(colId)) { if(colId === 'AI') dataKirim.push(getVal('ln-S') + getVal('ln-U') + getVal('ln-W') + getVal('ln-AD') + getVal('ln-AF') + getVal('ln-AH')); if(colId === 'AS') dataKirim.push(getVal('ln-AN') + getVal('ln-AP') + getVal('ln-AR')); if(colId === 'BB') dataKirim.push(getVal('ln-S') + getVal('ln-U') + getVal('ln-W') + getVal('ln-AD') + getVal('ln-AF') + getVal('ln-AH') + getVal('ln-AN') + getVal('ln-AP') + getVal('ln-AR') + getVal('ln-AT') + getVal('ln-AU') + getVal('ln-AV') + getVal('ln-AX') + getVal('ln-AY') + getVal('ln-AZ')); } else { let val = $('#ln-' + colId).val() || ""; const numCols = ["L","S","U","W","AD","AF","AH","AJ","AK","AM","AN","AO","AP","AQ","AR","AT","AU","AV","AX","AY","AZ","BK","BP","BQ"]; if (numCols.includes(colId) && val !== "") val = getVal('ln-' + colId);
+dataKirim.push(val); } });
+
+$('#btnSimpanPDLN').html('<span class="spinner-border spinner-border-sm"></span> Mengunggah...').addClass('disabled');
+
+let success = await handleUploadAndSave('inp-scan-ln', 'inp-link-ln', aktifSpm, unitKerja, function(scanUrl) {
+$('#btnSimpanPDLN').html('<span class="spinner-border spinner-border-sm"></span> Menyimpan Data...');
+let rowKirim = modeEdit ? editRowIndex : null;
+google.script.run.withSuccessHandler(res => {
+$('#btnSimpanPDLN').html(modeEdit ? '<i class="bi bi-pencil-square me-2"></i>Update Data' : '<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').removeClass('disabled');
+if(res.success) { $('#modalPdln').modal('hide'); loadDaftarRekap(); } else { alert(res.message); }
+}).simpanAtauUpdateRekapPDLN(aktifSpm, dataKirim, aktifPagu, picName, unitKerja, scanUrl, rowKirim, isScanModeCepat);
+});
+
+if(!success) { $('#btnSimpanPDLN').html(modeEdit ? '<i class="bi bi-pencil-square me-2"></i>Update Data' : '<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').removeClass('disabled'); }
+}
+
+function updateRekapUnit() { let stats = {}; let gt = { t: 0, f: 0, r: 0, s: 0 };
+dataRekapUnit.forEach(d => { let u = d['Unit Kerja'] || 'N/A'; if(!stats[u]) stats[u] = { t: 0, f: 0, r: 0, s: 0 }; stats[u].t++; gt.t++; if(d['Fisik'] === true) { stats[u].f++; gt.f++; } if(d['Rekap'] === true) { stats[u].r++; gt.r++; } if(d['Scan'] === true) { stats[u].s++; gt.s++; } });
+let h = ''; dynamicUnits.forEach(k => { if(stats[k]) { let s = stats[k]; h += `<tr><td class="fw-bold ps-2">${k}</td><td class="text-center bg-light fw-bold">${s.t}</td><td class="text-center">${s.f}</td><td>${renderProgressBar((s.f/s.t*100).toFixed(1), 'fisik')}</td><td class="text-center">${s.r}</td><td>${renderProgressBar((s.r/s.t*100).toFixed(1), 'rekap')}</td><td class="text-center">${s.s}</td><td>${renderProgressBar((s.s/s.t*100).toFixed(1), 'scan')}</td></tr>`; } });
+$('#tbody-rekap-unit').html(h); $('#tfoot-rekap-unit').html(`<tr><td class="ps-2 fw-bold">TOTAL</td><td class="text-center fw-bold">${gt.t}</td><td class="text-center">${gt.f}</td><td>${renderProgressBar((gt.f/gt.t*100).toFixed(1), 'fisik')}</td><td class="text-center">${gt.r}</td><td>${renderProgressBar((gt.r/gt.t*100).toFixed(1), 'rekap')}</td><td class="text-center">${gt.s}</td><td>${renderProgressBar((gt.s/gt.t*100).toFixed(1), 'scan')}</td></tr>`); const ctx = document.getElementById('chartUnit').getContext('2d'); if(chartU) chartU.destroy();
+chartU = new Chart(ctx, { type: 'bar', data: { labels: dynamicUnits.filter(u => stats[u]), datasets: [{ label: 'Total SPM', data: dynamicUnits.filter(u => stats[u]).map(k => stats[k].t), backgroundColor: '#3b82f6', borderRadius: 5 }] }, options: { maintainAspectRatio: false, plugins: { legend: { display: false } } } });
+}
+
+function updateRekapBagian() { const selUnit = $('#f-unit-rekap').val(); $('#label-unit-terpilih').text('UNIT: ' + selUnit); const filtered = dataRekapBagian.filter(d => d['Unit Kerja'] === selUnit);
+const uniqueBagians = [...new Set(filtered.map(d => d['Bagian']).filter(Boolean))].sort(); $('#f-bagian-jenis-filter').html('<option value="">-- Semua Bagian --</option>' + uniqueBagians.map(b => `<option value="${b}">${b}</option>`).join(''));
+let sBagian = {}; let bt = { t: 0, f: 0, r: 0, s: 0 };
+filtered.forEach(d => { let b = d['Bagian'] || "N/A"; if(!sBagian[b]) sBagian[b] = { t: 0, f: 0, r: 0, s: 0 }; sBagian[b].t++; bt.t++; if(d['Fisik'] === true) { sBagian[b].f++; bt.f++; } if(d['Rekap'] === true) { sBagian[b].r++; bt.r++; } if(d['Scan'] === true) { sBagian[b].s++; bt.s++; } });
+let hB = ''; const labelsB = Object.keys(sBagian).sort(); labelsB.forEach(k => { let s = sBagian[k]; hB += `<tr><td class="ps-2 fw-bold">${k}</td><td class="text-center bg-light fw-bold">${s.t}</td><td class="text-center">${s.f}</td><td>${renderProgressBar((s.f/s.t*100).toFixed(1), 'fisik')}</td><td class="text-center">${s.r}</td><td>${renderProgressBar((s.r/s.t*100).toFixed(1), 'rekap')}</td><td class="text-center">${s.s}</td><td>${renderProgressBar((s.s/s.t*100).toFixed(1), 'scan')}</td></tr>`; });
+$('#tbody-rekap-bagian').html(hB || '<tr><td colspan="8" class="text-center">Data tidak tersedia</td></tr>'); if(bt.t > 0) $('#tfoot-rekap-bagian').html(`<tr><td class="ps-2 fw-bold">TOTAL ${selUnit}</td><td class="text-center fw-bold">${bt.t}</td><td class="text-center">${bt.f}</td><td>${renderProgressBar((bt.f/bt.t*100).toFixed(1), 'fisik')}</td><td class="text-center">${bt.r}</td><td>${renderProgressBar((bt.r/bt.t*100).toFixed(1), 'rekap')}</td><td class="text-center">${bt.s}</td><td>${renderProgressBar((bt.s/bt.t*100).toFixed(1), 'scan')}</td></tr>`);
+else $('#tfoot-rekap-bagian').empty(); const ctxB = document.getElementById('chartBagian').getContext('2d'); if(chartB) chartB.destroy(); chartB = new Chart(ctxB, { type: 'bar', data: { labels: labelsB, datasets: [{ label: 'Jumlah SPM', data: labelsB.map(l => sBagian[l].t), backgroundColor: '#fb923c', borderRadius: 4 }] }, options: { indexAxis: 'y', maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { display: false }, ticks: { font: { size: 10 } } }, y: { grid: { display: false }, ticks: { font: { size: 10 } } } } } });
+renderTabelJenisBagian(); }
+
+function renderTabelJenisBagian() { const selUnit = $('#f-unit-rekap').val(); const selBagian = $('#f-bagian-jenis-filter').val(); let filtered = dataRekapBagian.filter(d => d['Unit Kerja'] === selUnit);
+if(selBagian) filtered = filtered.filter(d => d['Bagian'] === selBagian); let sJenis = {};
+let jt = { t: 0, f: 0, r: 0, s: 0 };
+filtered.forEach(d => { let oj = d['Jenis SPP/SPM'] || 'N/A'; let dj = oj; if (GROUP_GAJI_ASN.includes(oj)) dj = "GAJI ASN"; else if (GROUP_PPNPN.includes(oj)) dj = "PENGHASILAN PPNPN"; if(!sJenis[dj]) sJenis[dj] = { t: 0, f: 0, r: 0, s: 0 }; sJenis[dj].t++; jt.t++; if(d['Fisik'] === true) { sJenis[dj].f++; jt.f++; } if(d['Rekap'] === true) { sJenis[dj].r++; jt.r++; } if(d['Scan'] === true) { sJenis[dj].s++; jt.s++; } });
+let hJ = ''; Object.keys(sJenis).sort().forEach(j => { let s = sJenis[j]; hJ += `<tr><td class="ps-2 fw-bold">${j}</td><td class="text-center bg-light fw-bold">${s.t}</td><td class="text-center">${s.f}</td><td>${renderProgressBar((s.f/s.t*100).toFixed(1), 'fisik')}</td><td class="text-center">${s.r}</td><td>${renderProgressBar((s.r/s.t*100).toFixed(1), 'rekap')}</td><td class="text-center">${s.s}</td><td>${renderProgressBar((s.s/s.t*100).toFixed(1), 'scan')}</td></tr>`; });
+$('#tbody-bagian-jenis').html(hJ || '<tr><td colspan="8" class="text-center">Pilih Unit Terlebih Dahulu</td></tr>'); if(jt.t > 0) $('#tfoot-bagian-jenis').html(`<tr><td class="ps-2 fw-bold">TOTAL</td><td class="text-center fw-bold">${jt.t}</td><td class="text-center">${jt.f}</td><td>${renderProgressBar((jt.f/jt.t*100).toFixed(1), 'fisik')}</td><td class="text-center">${jt.r}</td><td>${renderProgressBar((jt.r/jt.t*100).toFixed(1), 'rekap')}</td><td class="text-center">${jt.s}</td><td>${renderProgressBar((jt.s/jt.t*100).toFixed(1), 'scan')}</td></tr>`);
+else $('#tfoot-bagian-jenis').empty(); }
+
+function updateDetailJenisUnit() { const selUnit = $('#f-unit-detail').val(); let filtered = dataRekapUnit;
+if (selUnit) { filtered = dataRekapUnit.filter(d => d['Unit Kerja'] === selUnit); } let stats = {};
+let ut = { t: 0, f: 0, r: 0, s: 0 };
+filtered.forEach(d => { let oj = d['Jenis SPP/SPM'] || 'N/A'; let dj = oj; if (GROUP_GAJI_ASN.includes(oj)) dj = "GAJI ASN"; else if (GROUP_PPNPN.includes(oj)) dj = "PENGHASILAN PPNPN"; if(!stats[dj]) stats[dj] = { t: 0, f: 0, r: 0, s: 0 }; stats[dj].t++; ut.t++; if(d['Fisik'] === true) { stats[dj].f++; ut.f++; } if(d['Rekap'] === true) { stats[dj].r++; ut.r++; } if(d['Scan'] === true) { stats[dj].s++; ut.s++; } });
+let h = ''; Object.keys(stats).sort().forEach(j => { let s = stats[j]; h += `<tr><td class="ps-2 fw-bold">${j}</td><td class="text-center bg-light fw-bold">${s.t}</td><td class="text-center">${s.f}</td><td>${renderProgressBar((s.f/s.t*100).toFixed(1), 'fisik')}</td><td class="text-center">${s.r}</td><td>${renderProgressBar((s.r/s.t*100).toFixed(1), 'rekap')}</td><td class="text-center">${s.s}</td><td>${renderProgressBar((s.s/s.t*100).toFixed(1), 'scan')}</td></tr>`; });
+$('#tbody-detail-jenis').html(h || '<tr><td colspan="8" class="text-center">Tidak ada data</td></tr>'); let footerLabel = selUnit ? `TOTAL ${selUnit}` : 'TOTAL SEMUA UNIT';
+if(ut.t > 0) $('#tfoot-detail-jenis').html(`<td class="ps-2 fw-bold">${footerLabel}</td><td class="text-center fw-bold">${ut.t}</td><td class="text-center">${ut.f}</td><td>${renderProgressBar((ut.f/ut.t*100).toFixed(1), 'fisik')}</td><td class="text-center">${ut.r}</td><td>${renderProgressBar((ut.r/ut.t*100).toFixed(1), 'rekap')}</td><td class="text-center">${ut.s}</td><td>${renderProgressBar((ut.s/ut.t*100).toFixed(1), 'scan')}</td>`); else $('#tfoot-detail-jenis').empty(); }
+
+function renderProgressBar(val, type) { let colorClass = (type === 'fisik') ? 'bg-bar-blue' : (type === 'rekap') ? 'bg-bar-orange' : 'bg-bar-green';
+return `<div class="progress-container"><div class="progress-fill ${colorClass}" style="width: ${val}%"></div><div class="progress-text">${val}%</div></div>`; }
+
+// ==============================================================================
+// LOGIKA JAVASCRIPT BARU: Mengelola Interaksi Modal Folder Scan & Mode Sembunyi Form
+// ==============================================================================
+function bukaModalFolder(noSpm, unitKerja) {
+aktifSpmFolder = noSpm;
+aktifUnitFolder = unitKerja;
+aktifSpm = noSpm; // <--- TAMBAHKAN BARIS INI
+
+let rowData = rawData.find(d => d['No. SPP/SPM'] === noSpm);
+aktifPagu = rowData ? Number(rowData['Jumlah Pengeluaran'] || 0) : 0;
+aktifPagu = rowData ? Number(rowData['Jumlah Pengeluaran'] || 0) : 0;
+
+// Mengambil nama dari Sesi User yang sedang login
+let userData = JSON.parse(localStorage.getItem('userSession'));
+
+$('#scan-state-loading').show();
+$('#scan-state-notfound').hide();
+$('#scan-state-found').hide();
+$('#inp-scan-tambahan').val('').prop('disabled', true);
+$('#inp-link-tambahan').val('').prop('disabled', true);
+$('#btn-upload-tambahan').prop('disabled', true).html('Upload Tambahan');
+$('#upload-progress-text').hide();
+$('#tabel-rekap-scan-body').html('<tr><td colspan="4" class="text-center"><div class="spinner-border spinner-border-sm text-primary"></div> Mengambil rincian rekap...</td></tr>');
+
+$('#modalFolderScan').modal('show');
+
+google.script.run.withSuccessHandler(res => {
+$('#scan-state-loading').hide();
+if (res.exists) { aktifUrlFolder = res.url; $('#btn-lihat-dokumen').attr('onclick', `window.open('${res.url}', '_blank')`); $('#scan-state-found').show(); }
+else { $('#scan-state-notfound').show(); }
+}).checkFolderSpm(noSpm, unitKerja);
+
+google.script.run.withSuccessHandler(res => {
+if(res.success) { renderRekapDiModalScan(res.data); }
+else { $('#tabel-rekap-scan-body').html(`<tr><td colspan="4" class="text-center text-danger small">Gagal memuat data rekap.</td></tr>`); }
+}).getDaftarRekap(noSpm);
+}
+
+function cekNamaScan() {
+  // Tombol selalu aktif karena nama diambil langsung dari Sesi saat Simpan
+  $('.btn-upload-cepat').prop('disabled', false);
+  $('#inp-scan-tambahan, #inp-link-tambahan, #btn-upload-tambahan').prop('disabled', false);
+}
+
+function renderRekapDiModalScan(data) {
+  if (data.length === 0) {
+    $('#tabel-rekap-scan-body').html('<tr><td colspan="4" class="text-center text-muted small py-3">Belum ada rincian rekap.<br>Silakan isi rekap melalui tombol "Cek Rekap" pada tabel utama terlebih dahulu.</td></tr>');
+    return;
+  }
+  let html = "";
+  data.forEach(item => {
+    const hasScan = item.urlScan && item.urlScan.trim() !== "";
+    
+    // Logika mengambil nama PIC Scan terakhir dari riwayat
+    let picScanTampil = "-";
+    if (item.picScan && item.picScan !== "-") {
+      let picArray = item.picScan.split(";");
+      picScanTampil = picArray[picArray.length - 1].trim(); // Ambil nama terakhir saja
+    }
+
+    const btnUpload = hasScan ?
+      `<button class="btn btn-sm btn-outline-secondary py-0 px-2 fw-bold btn-upload-cepat" onclick="bukaUploadCepat('${item.kategori}', ${item.rowIndex}, ${item.nilai}, '${item.urlScan}')" disabled title="Ganti Bukti Scan"><i class="bi bi-pencil-square"></i> Edit</button>
+      <a href="${item.urlScan}" target="_blank" class="btn btn-sm btn-info py-0 px-2 text-white" title="Lihat Dokumen"><i class="bi bi-eye"></i></a>` :
+      `<button class="btn btn-sm btn-primary py-0 px-2 fw-bold btn-upload-cepat" onclick="bukaUploadCepat('${item.kategori}', ${item.rowIndex}, ${item.nilai}, '')" disabled title="Upload Bukti Scan"><i class="bi bi-upload"></i> Upload</button>`;
+
+    html += `<tr>
+      <td class="small fw-bold text-secondary text-start">${item.kategori}</td>
+      <td class="small text-end fw-bold">Rp ${Number(item.nilai).toLocaleString('id-ID')}</td>
+      <td class="text-center fw-bold text-primary">${picScanTampil}</td>
+      <td class="text-center">${btnUpload}</td>
+    </tr>`;
+  });
+  $('#tabel-rekap-scan-body').html(html);
+  cekNamaScan();
+}
+
+function bukaUploadCepat(kategori, rowIndex, nilai, urlLama) {
+  $('#modalFolderScan').modal('hide');
+  editRekap(kategori, rowIndex, nilai, urlLama, true);
+  // true = Mode Cepat Aktif
+}
+
+// FUNGSI AJAIB: Menyembunyikan form rincian saat Mode Scan Cepat
+function toggleModeScanCepat(aktif) {
+if (aktif) {
+// 1. Sembunyikan elemen dekorasi & navigasi umum
+// PENYESUAIAN: Menghapus .col-label agar tidak diganggu oleh Javascript
+$('.nav-tabs, .wizard-card h6.section-title, .total-card, .alert, .alert-sisa').hide(); 
+
+// 2. PERBAIKAN UTAMA: Sembunyikan semua TABEL (seperti tabel Uang Harian yang lolos)
+$('.wizard-card table').hide();
+// 3. Logika untuk kategori Wizard (PD, PDLN, BJ, HN, PPM, FB)
+$('.wizard-card .row > div').each(function() {
+const adaScan = $(this).find('.file-scan').length > 0;
+const adaLink = $(this).find('.form-link-drive').length > 0;
+
+if (adaScan || adaLink) {
+$(this).show();
+} else {
+$(this).hide();
+}
+});
+// 4. Logika khusus Belanja Pegawai (BP) karena form-nya tidak pakai wizard-card
+$('#modalBp .modal-body > label:not(:has(.bi-upload)):not(:has(.bi-link-45deg))').hide();
+$('#modalBp .modal-body > input:not(.file-scan):not(.form-link-drive)').hide();
+// Bersihkan desain sisa-sisa kotak
+$('.wizard-card').css({'box-shadow':'none', 'border':'none', 'padding':'0', 'margin-bottom':'0'});
+$('.tab-pane').addClass('show active');
+$('.btn-lanjut-tab, .btn-kembali-tab').hide();
+$('#btnSimpanPD, #btnSimpanPDLN, #btn-simpan-bj, #btn-simpan-hn, #btn-simpan-ppm, #btn-simpan-fb, #btn-simpan-bp, #btn-simpan-rekap').removeClass('d-none').show();
+} else {
+// PENYESUAIAN: Menghapus .col-label dari sini supaya tidak dimunculkan secara paksa saat form dibuka
+$('.nav-tabs, .wizard-card h6.section-title, .total-card, .alert, .alert-sisa').show();
+$('.wizard-card table').show();
+$('.wizard-card .row > div').show();
+$('#modalBp .modal-body > *').show();
+$('.wizard-card').css({'box-shadow':'', 'border':'', 'padding':'', 'margin-bottom':''});
+$('.btn-lanjut-tab').show();
+}
+}
+
+function prosesBuatFolder() {
+$('#scan-state-notfound').hide();
+$('#scan-state-loading').show();
+$('#scan-state-loading .text-secondary').text("Membuat Folder...");
+
+google.script.run.withSuccessHandler(res => {
+$('#scan-state-loading').hide();
+$('#scan-state-loading .text-secondary').text("Memeriksa Folder..."); 
+
+if(res.success) {
+aktifUrlFolder = res.url;
+$('#btn-lihat-dokumen').attr('onclick', `window.open('${res.url}', '_blank')`);
+$('#scan-state-found').show(); 
+} else {
+alert("Gagal membuat folder: " + res.message);
+$('#modalFolderScan').modal('hide');
+}
+}).createFolderSpm(aktifSpmFolder, aktifUnitFolder);
+}
+
+async function prosesUploadTambahan() {
+let fileInput = document.getElementById('inp-scan-tambahan');
+let linkInput = document.getElementById('inp-link-tambahan');
+
+let hasFile = (fileInput && fileInput.files.length > 0);
+let driveLink = (linkInput && linkInput.value.trim() !== "") ? linkInput.value.trim() : "";
+
+if (!hasFile && driveLink === "") {
+alert("Pilih minimal 1 dokumen atau Paste Link Drive terlebih dahulu!");
+return;
+}
+
+$('#btn-upload-tambahan').prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> Memproses...');
+
+if (hasFile) {
+let files = fileInput.files;
+let total = files.length;
+$('#upload-progress-text').show().text(`Mengunggah 0 dari ${total} dokumen...`);
+
+let successCount = 0;
+for (let i = 0; i < total; i++) {
+let file = files[i];
+if (file.size > 30 * 1024 * 1024) {
+alert(`File ${file.name} terlalu besar (>30MB)! Lewati file ini.`);
+continue;
+}
+
+$('#upload-progress-text').text(`Mengunggah file ${i + 1} dari ${total} (${file.name})...`);
+
+try {
+let base64 = await getBase64(file);
+await new Promise((resolve, reject) => {
+google.script.run.withSuccessHandler(res => {
+if(res.success) { successCount++; resolve(res); }
+else { reject(res.message); }
+}).uploadFileToDrive(base64, file.name, file.type, aktifSpmFolder, aktifUnitFolder);
+});
+} catch(e) {
+console.error("Gagal upload " + file.name + ": " + e);
+}
+}
+selesaiUploadTambahan(`Berhasil mengunggah ${successCount} dokumen fisik!`);
+}
+else if (driveLink !== "") {
+$('#upload-progress-text').show().text(`Menyalin dokumen dari Link Drive...`);
+
+google.script.run.withSuccessHandler(res => {
+if (res.success) {
+selesaiUploadTambahan("Berhasil menyalin dokumen dari Link Drive!");
+} else {
+alert("Gagal menyalin dokumen: " + res.message);
+resetTombolUploadTambahan(); 
+}
+}).copyFileFromDriveLink(driveLink, aktifSpmFolder, aktifUnitFolder);
+}
+}
+
+function selesaiUploadTambahan(pesanSukses) {
+$('#btn-upload-tambahan').html('<i class="bi bi-check-circle"></i> Selesai').removeClass('btn-primary').addClass('btn-success');
+$('#upload-progress-text').text(pesanSukses);
+setTimeout(() => {
+  resetTombolUploadTambahan();
+  bukaModalFolder(aktifSpm);
+  sinkronisasiScanLokal(aktifSpm);
+}, 3000);
+}
+
+function resetTombolUploadTambahan() {
+$('#btn-upload-tambahan').html('Upload Sekarang').removeClass('btn-success').addClass('btn-primary').prop('disabled', false);
+$('#inp-scan-tambahan').val('');
+$('#inp-link-tambahan').val('');
+$('#upload-progress-text').hide();
+}
+
+// --- FITUR AUTO LOGOUT 1 JAM ---
+let idleTimer;
+
+function resetIdleTimer() {
+  // Hapus timer yang sedang berjalan
+  clearTimeout(idleTimer);
+  
+  // Hanya jalankan timer jika user sedang berada di dalam Dashboard (bukan halaman login)
+  if ($('#main-dashboard').is(':visible')) {
+    idleTimer = setTimeout(function() {
+      // Tindakan saat waktu habis (1 jam = 3.600.000 ms)
+      alert("Sesi Anda telah berakhir. Silakan login kembali.");
+      
+      // Proses logout tanpa konfirmasi
+      localStorage.removeItem('userSession');
+      localStorage.removeItem('allProfiles');
+      $('#main-dashboard').hide();
+      $('#login-page').css('display', 'flex');
+      $('#tbodySpm').empty();
+      generateCaptcha();
+      
+    }, 60 * 60 * 1000); 
+  }
+}
+
+// Daftar aktivitas yang dianggap "sedang bekerja" (mouse gerak, klik, ngetik, scroll)
+['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'].forEach(function(namaEvent) {
+  window.addEventListener(namaEvent, resetIdleTimer, false);
+});
+
+function sinkronisasiBarisLokal(noSpm, totalRekapBaru) {
+  let safeId = noSpm.replace(/[^a-zA-Z0-9]/g, '_');
+  
+  // 1. Cari data di memori lokal
+  let idx = rawData.findIndex(d => d['No. SPP/SPM'] === noSpm);
+  if (idx === -1) return;
+  
+  let d = rawData[idx];
+  let pagu = Number(d['Jumlah Pengeluaran'] || 0);
+  
+  // 2. Kalkulasi ulang status Rekap berdasarkan total baru
+  let statRekap = false;
+  if (pagu > 0) {
+    if (totalRekapBaru > pagu + 1) { statRekap = "TIDAK SESUAI"; }
+    else if (totalRekapBaru >= pagu - 1) { statRekap = true; }
+  }
+  
+  // 3. Simpan perubahan ke memori lokal agar tidak hilang saat difilter
+  d['Rekap'] = statRekap;
+  
+  // 4. Update Tampilan Tombol Rekap secara langsung di tabel
+  let warnaBtnRekap = ''; 
+  let textBtnRekap = '';
+  
+  if (statRekap === "TIDAK SESUAI") {
+    warnaBtnRekap = 'bg-danger text-white border-danger';
+    textBtnRekap = '<i class="bi bi-exclamation-triangle-fill me-1"></i> Tdk Sesuai';
+  } else if (statRekap === true) {
+    warnaBtnRekap = 'bg-success text-white border-success';
+    textBtnRekap = '<i class="bi bi-check-all me-1"></i> Selesai';
+  } else {
+    warnaBtnRekap = 'btn-outline-primary bg-white text-primary';
+    textBtnRekap = 'Cek Rekap';
+  }
+  
+  $(`#td-rekap-${safeId}`).html(`<button class="btn-status-seragam ${warnaBtnRekap}" onclick="bukaModalRekap('${noSpm}', ${pagu})">${textBtnRekap}</button>`);
+  
+  // 5. Update grafik/tabel rekapitulasi secara otomatis (karena sangat ringan)
+  if (menuAktif === 'unit') { updateRekapUnit(); updateDetailJenisUnit(); }
+  if (menuAktif === 'bagian') { updateRekapBagian(); }
+}
+
+function sinkronisasiScanLokal(noSpm) {
+  let safeId = noSpm.replace(/[^a-zA-Z0-9]/g, '_');
+  
+  // 1. Cari data di memori lokal agar tidak hilang saat filter
+  let idx = rawData.findIndex(d => d['No. SPP/SPM'] === noSpm);
+  if (idx !== -1) {
+    // Asumsi: Jika ada 1 saja yang diupload, kita tandai status scannya ada
+    rawData[idx]['Scan'] = true; 
+  }
+
+  // 2. Desain tombol baru untuk tampilan tabel utama (Dashboard)
+  // Sesuaikan class dan icon dengan desain tombol "Sudah Upload" di sistem Anda
+  let btnScanBaru = `<button class="btn-status-seragam bg-success text-white border-success" onclick="bukaModalFolder('${noSpm}')">
+                        <i class="bi bi-folder-check me-1"></i> Selesai
+                     </button>`;
+  
+  // 3. Suntikkan tombol baru ke tabel Dashboard di belakang layar
+  $(`#td-scan-${safeId}`).html(btnScanBaru);
+}
+</script>
+</body>
+</html>
