@@ -1901,7 +1901,22 @@ $('#btn-simpan-' + conf.prefix).html('<span class="spinner-border spinner-border
 let rowKirim = modeEdit ? editRowIndex : null;
 google.script.run.withSuccessHandler(res => {
 $('#btn-simpan-' + conf.prefix).html(modeEdit ? '<i class="bi bi-pencil-square me-2"></i>Update Data' : '<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').removeClass('disabled');
-if(res.success) { $(conf.modal).modal('hide'); loadDaftarRekap(); } else { alert(res.message); }
+if(res.success) { $(conf.modal).modal('hide'); 
+if (typeof isScanModeCepat !== 'undefined' && isScanModeCepat === true) {
+              
+              // JALUR 1: Jika YA (Ini adalah proses Upload Scan)
+              bukaModalFolder(aktifSpm);       // Refresh layar Daftar Scan agar file baru muncul
+              sinkronisasiScanLokal(aktifSpm); // Ubah warna tombol scan di tabel utama menjadi Selesai (Hijau)
+              isScanModeCepat = false;         // Kembalikan status penanda menjadi false
+              
+          } else {
+              
+              // JALUR 2: Jika TIDAK (Ini adalah proses pengisian angka Rekap biasa)
+              loadDaftarRekap();                           // Refresh layar Daftar Rekap
+              sinkronisasiBarisLokal(aktifSpm, res.total); // Ubah warna tombol rekap di tabel utama
+              
+          };
+ } else { alert(res.message); }
 }).simpanAtauUpdateRekapDynamic(aktifSpm, kategori, dataKirim, aktifPagu, picName, unitKerja, scanUrl, rowKirim, isScanModeCepat);
 });
 
@@ -1921,7 +1936,22 @@ $('#btn-simpan-rekap').text('Menyimpan Data...');
 let rowKirim = modeEdit ? editRowIndex : null;
 google.script.run.withSuccessHandler(res => {
 $('#btn-simpan-rekap').text(modeEdit ? 'Update Rekap' : 'Simpan Rekap').prop('disabled', false);
-if(res.success) { $('#modalFormRekap').modal('hide'); loadDaftarRekap(); } else { alert(res.message); }
+if(res.success) { $('#modalFormRekap').modal('hide'); 
+if (typeof isScanModeCepat !== 'undefined' && isScanModeCepat === true) {
+              
+              // JALUR 1: Jika YA (Ini adalah proses Upload Scan)
+              bukaModalFolder(aktifSpm);       // Refresh layar Daftar Scan agar file baru muncul
+              sinkronisasiScanLokal(aktifSpm); // Ubah warna tombol scan di tabel utama menjadi Selesai (Hijau)
+              isScanModeCepat = false;         // Kembalikan status penanda menjadi false
+              
+          } else {
+              
+              // JALUR 2: Jika TIDAK (Ini adalah proses pengisian angka Rekap biasa)
+              loadDaftarRekap();                           // Refresh layar Daftar Rekap
+              sinkronisasiBarisLokal(aktifSpm, res.total); // Ubah warna tombol rekap di tabel utama
+              
+          }; 
+} else { alert(res.message); }
 }).simpanAtauUpdateRekap(aktifSpm, kategori, nilai, aktifPagu, picName, unitKerja, scanUrl, rowKirim, isScanModeCepat);
 });
 
@@ -1999,7 +2029,22 @@ $('#btnSimpanPD').html('<span class="spinner-border spinner-border-sm"></span> M
 let rowKirim = modeEdit ? editRowIndex : null;
 google.script.run.withSuccessHandler(res => {
 $('#btnSimpanPD').html(modeEdit ? '<i class="bi bi-pencil-square me-2"></i>Update Data' : '<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').removeClass('disabled');
-if(res.success) { $('#modalPd').modal('hide'); loadDaftarRekap(); } else { alert(res.message); }
+if(res.success) { $('#modalPd').modal('hide'); 
+if (typeof isScanModeCepat !== 'undefined' && isScanModeCepat === true) {
+              
+              // JALUR 1: Jika YA (Ini adalah proses Upload Scan)
+              bukaModalFolder(aktifSpm);       // Refresh layar Daftar Scan agar file baru muncul
+              sinkronisasiScanLokal(aktifSpm); // Ubah warna tombol scan di tabel utama menjadi Selesai (Hijau)
+              isScanModeCepat = false;         // Kembalikan status penanda menjadi false
+              
+          } else {
+              
+              // JALUR 2: Jika TIDAK (Ini adalah proses pengisian angka Rekap biasa)
+              loadDaftarRekap();                           // Refresh layar Daftar Rekap
+              sinkronisasiBarisLokal(aktifSpm, res.total); // Ubah warna tombol rekap di tabel utama
+              
+          };
+ } else { alert(res.message); }
 }).simpanAtauUpdateRekapPD(aktifSpm, dataKirim, aktifPagu, picName, unitKerja, scanUrl, rowKirim, isScanModeCepat);
 });
 
@@ -2058,7 +2103,22 @@ $('#btnSimpanPDLN').html('<span class="spinner-border spinner-border-sm"></span>
 let rowKirim = modeEdit ? editRowIndex : null;
 google.script.run.withSuccessHandler(res => {
 $('#btnSimpanPDLN').html(modeEdit ? '<i class="bi bi-pencil-square me-2"></i>Update Data' : '<i class="bi bi-cloud-arrow-up me-2"></i>Simpan Data').removeClass('disabled');
-if(res.success) { $('#modalPdln').modal('hide'); loadDaftarRekap(); } else { alert(res.message); }
+if(res.success) { $('#modalPdln').modal('hide'); 
+if (typeof isScanModeCepat !== 'undefined' && isScanModeCepat === true) {
+              
+              // JALUR 1: Jika YA (Ini adalah proses Upload Scan)
+              bukaModalFolder(aktifSpm);       // Refresh layar Daftar Scan agar file baru muncul
+              sinkronisasiScanLokal(aktifSpm); // Ubah warna tombol scan di tabel utama menjadi Selesai (Hijau)
+              isScanModeCepat = false;         // Kembalikan status penanda menjadi false
+              
+          } else {
+              
+              // JALUR 2: Jika TIDAK (Ini adalah proses pengisian angka Rekap biasa)
+              loadDaftarRekap();                           // Refresh layar Daftar Rekap
+              sinkronisasiBarisLokal(aktifSpm, res.total); // Ubah warna tombol rekap di tabel utama
+              
+          };
+ } else { alert(res.message); }
 }).simpanAtauUpdateRekapPDLN(aktifSpm, dataKirim, aktifPagu, picName, unitKerja, scanUrl, rowKirim, isScanModeCepat);
 });
 
